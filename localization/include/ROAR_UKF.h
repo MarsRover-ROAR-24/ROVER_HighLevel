@@ -35,7 +35,6 @@ public:
 
 	/*** Constructors ***/
 	MerwedSigmaPoints();		// Default Constructor
-	MerwedSigmaPoints(int n);
 	MerwedSigmaPoints(int n, double alpha, double beta, double kappa);
 
 	/*** Destructors ***/
@@ -63,7 +62,8 @@ public:
 	// Measurement vector: []
 	int z_dim;
 	Eigen::VectorXd z;			// z_state
-	Eigen::VectorXd z_prior;	// z_state prediction (or z_bar)
+	Eigen::VectorXd z_prior;    // z_state prediction (or z_bar)
+	Eigen::MatrixXd S;		    // Posteriori measurement covariance matrix
 
 	// Posteriori Estimate Covariance Matrix 
 	Eigen::MatrixXd P;			// Posteriori estimate covariance matrix
@@ -92,10 +92,6 @@ public:
 	Eigen::Vector3d g0;
 	Eigen::Vector3d m0;
 
-	// Compute mean and covariance using unscented transform
-    Eigen::VectorXd zp;
-    Eigen::MatrixXd Pz;
-
 	/*** Constructors ***/
 	UKF();
 	UKF(MerwedSigmaPoints merwed_sigma_points);
@@ -105,8 +101,8 @@ public:
 	virtual ~UKF();
 
 	/*** Position Prediction + Update Steps ***/
-	void UKF::predict_states(Eigen::VectorXd z_measurement, double dt);
-	void UKF::predict_measurement(double dt, double lon0, double lat0);
+	void predict_states(Eigen::VectorXd z_measurement, double dt);
+	void predict_measurement(double dt, double lon0, double lat0);
 
 	/*** Orientation Prediction + Update Steps ***/
 	void predict_with_quaternion_ang_vec_model(double dt, Eigen::VectorXd u_t);
@@ -118,10 +114,10 @@ public:
 		Eigen::MatrixXd noise_cov);
 
 	/*** Nonlinear functions **/
-	Eigen::VectorXd UKF::process_model(Eigen::VectorXd x, Eigen::VectorXd z_measurement, double dt);
-	Eigen::VectorXd UKF::measurment_model(Eigen::VectorXd x, double lon0, double lat0);
+	Eigen::VectorXd process_model(Eigen::VectorXd x, Eigen::VectorXd z_measurement, double dt);
+	Eigen::VectorXd measurment_model(Eigen::VectorXd x, double lon0, double lat0);
 
-	void UKF::update(Eigen::MatrixXd z_measurement);
+	void update(Eigen::MatrixXd z_measurement);
 
 };
 
