@@ -48,24 +48,47 @@ public:
 	Eigen::MatrixXd calculate_sigma_points(Eigen::VectorXd mean, Eigen::MatrixXd cov);
 
 };
-// Unscented kalman filter for orientation estimation 
+class ROVER
+{
+public:
+
+	/**** Constructor ****/
+	ROVER();
+
+	/**** Destructor ****/
+	virtual ~ROVER();
+
+	/*** ROVER Kinematic model ***/
+	double a1;
+	double a2;
+	double a3;
+	double a4;
+
+	// ROVER motion
+	double velocity;
+	double omega;
+	double d;
+
+	// velocity model
+	void calculate_wheel_change(Eigen::VectorXd w, double dt);
+};
 class UKF
 {
 public:
-	/*** UKF State Variables ***/
+    /*** UKF State Variables ***/
 	// State vector: [q0 q1 q2 q3 wx wy wz x y].T
 	int x_dim;					// State dimension
 	Eigen::VectorXd x_hat;		// Estimated State (mean)
 	Eigen::VectorXd x_prior;	// x_state prediction (or x_bar)
 	Eigen::VectorXd x_post;		// x_state poseterior
 
-	// Measurement vector: []
+    // Measurement vector: []
 	int z_dim;
 	Eigen::VectorXd z;			// z_state
 	Eigen::VectorXd z_prior;    // z_state prediction (or z_bar)
 	Eigen::MatrixXd S;		    // Posteriori measurement covariance matrix
 
-	// Posteriori Estimate Covariance Matrix 
+    // Posteriori Estimate Covariance Matrix 
 	Eigen::MatrixXd P;			// Posteriori estimate covariance matrix
 	Eigen::MatrixXd P_prior;	// Priori prediction cov matrix
 	Eigen::MatrixXd P_post;		// Posteriori cov matrix cache
@@ -75,11 +98,11 @@ public:
 	MerwedSigmaPoints sigma_points;
 	// Eigen::MatrixXd sigma_points;
 
-	// Transformed sigma points (after being passed through f(x) and h(x))
+    // Transformed sigma points (after being passed through f(x) and h(x))
 	Eigen::MatrixXd X_sigma;	// Predicted sigma points gamma = f(x,t) (prob book: g(u_t,sigma_t-1))
 	Eigen::MatrixXd Z_sigma;	// Measurement sigma points Zbar = h(X_bar)
 
-	/*** Noise Matrices ***/
+    /*** Noise Matrices ***/
 	// Process noise covariance matrix
 	Eigen::MatrixXd Q;
 
@@ -100,26 +123,24 @@ public:
 	/*** Destructors ***/
 	virtual ~UKF();
 
-	/*** Position Prediction + Update Steps ***/
-	void predict_states(Eigen::VectorXd z_measurement, double dt);
-	void predict_measurement(double dt, double lon0, double lat0);
 
-	/*** Orientation Prediction + Update Steps ***/
-	void predict_with_quaternion_ang_vec_model(double dt, Eigen::VectorXd u_t);
-	void update_with_quaternion_ang_vec_model(Eigen::MatrixXd z_measurement);
-
-	std::tuple<Eigen::VectorXd, Eigen::MatrixXd> unscented_transform(Eigen::MatrixXd sigmas,
+std::tuple<Eigen::VectorXd, Eigen::MatrixXd> unscented_transform(Eigen::MatrixXd sigmas,
 		Eigen::MatrixXd Wm,
 		Eigen::MatrixXd Wc,
 		Eigen::MatrixXd noise_cov);
 
-	/*** Nonlinear functions **/
-	Eigen::VectorXd process_model(Eigen::VectorXd x, Eigen::VectorXd z_measurement, double dt);
-	Eigen::VectorXd measurment_model(Eigen::VectorXd x, double lon0, double lat0);
 
-	void update(Eigen::MatrixXd z_measurement);
+/*** Position Prediction ***/
+
+void predict_states(Eigen::VectorXd w, double dt);
+Eigen::VectorXd process_model(Eigen::VectorXd x, Eigen::VectorXd w, double dt);
+
+/** measurnment prediction*/
+void predict_measurement(double dt, Eigen::VectorXd w, double lon0, double lat0);
+Eigen::VectorXd measurment_model(Eigen::VectorXd x, Eigen::VectorXd w, double lon0, double lat0, double dt);
+
+/*** update step***/
+void update(Eigen::MatrixXd z_measurement);
 
 };
-
-
 #endif

@@ -17,8 +17,8 @@ const float mag_hardiron_offset_y = 28.61;
 const float mag_hardiron_offset_z = 33.985;
 
 const float gyro_offset_x = 0.06285;
-const float gyro_offset_y = -0.08785;;
-const float gyro_offset_z = -0.06815;;
+const float gyro_offset_y = -0.08785;
+const float gyro_offset_z = -0.06815;
 
 const int n_state_dim = 7;  // x_state dimension
 const float alpha = 0.3;

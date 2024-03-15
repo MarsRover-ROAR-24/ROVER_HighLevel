@@ -18,6 +18,7 @@ catkin_package(
   rospy
   std_msgs
   roar_msgs
+  NavSatFix
   INCLUDE_DIRS include 
 )
 
@@ -27,17 +28,17 @@ include_directories(
   ${EIGEN3_INCLUDE_DIRS}
 )
 
-add_executable(simulation_testing src/simulation_testing.cpp  src/Quaternion.cpp src/UKF.cpp)
-target_link_libraries(simulation_testing ${catkin_LIBRARIES} Eigen3::Eigen)
-target_include_directories(simulation_testing PRIVATE include)
+# add_executable(simulation_testing src/simulation_testing.cpp  src/Quaternion.cpp src/UKF.cpp)
+# target_link_libraries(simulation_testing ${catkin_LIBRARIES} Eigen3::Eigen)
+# target_include_directories(simulation_testing PRIVATE include)
 
-add_executable(FilterOutput src/FilterOutput.cpp  src/Quaternion.cpp src/UKF.cpp)
-target_link_libraries(FilterOutput ${catkin_LIBRARIES} Eigen3::Eigen)
-target_include_directories(FilterOutput PRIVATE include)
+# add_executable(FilterOutput src/FilterOutput.cpp  src/Quaternion.cpp src/UKF.cpp)
+# target_link_libraries(FilterOutput ${catkin_LIBRARIES} Eigen3::Eigen)
+# target_include_directories(FilterOutput PRIVATE include)
 
 add_executable(ROAR_UKF src/ROAR_UKF.cpp src/Quaternion.cpp)
-target_link_libraries(simulation_testing ${catkin_LIBRARIES} Eigen3::Eigen)
-target_include_directories(simulation_testing PRIVATE include)
+target_link_libraries(ROAR_UKF ${catkin_LIBRARIES} Eigen3::Eigen)
+target_include_directories(ROAR_UKF PRIVATE include)
 
 
 # catkin_install_python(PROGRAMS

@@ -1,4 +1,42 @@
 ﻿#include "ROAR_UKF.h"
+ROVER::ROVER()
+{
+    /***
+    ROVER Default Constructor
+    ***/
+    // Default Constructor with default parameters
+    a1 = 0.0001205;
+    a2 = 0.0001205;
+    a3 = -0.2918;
+    a4 = 0.2918;
+
+    velocity = 0;
+    omega = 0;
+    d = 0;
+
+}
+void ROVER::calculate_wheel_change(Eigen::VectorXd w, double dt)
+{
+    /****
+      Process wheel speeds to calculate rover linear and angular velocity, position and orientation
+        Inputs:
+        x: current sigma point of state estimate x = [q0 q1 q2 q3 omega_x omega_y omega_z x y].T
+        w: Wheel speeds (w1, w2).T
+        dt: delta time
+
+        Outputs:
+        velocity: Linear velocity of rover
+        omega: Angular velocity of rover
+    ***/
+   
+    velocity = a1 * w(0) + a2 * w(1);
+    omega = a3 * w(0) + a4 * w(1);
+    d = velocity * dt;
+}
+ROVER::~ROVER()
+{
+    // Destructor
+}
 /*** ------ Sigma points --------- ***/
 MerwedSigmaPoints::MerwedSigmaPoints()
 {
@@ -174,12 +212,13 @@ UKF::UKF(MerwedSigmaPoints merwed_sigma_points)
     z = Eigen::VectorXd::Zero(z_dim); // Initial measurement in frame {B}, [z_gyro, z_acc, z_mag].T
 
     // Intialize Posteriori Estimate Covariance Matrix
+    Eigen::MatrixXd P;
     P = Eigen::MatrixXd::Zero(x_dim, x_dim);
+    Eigen::MatrixXd S;
     S = Eigen::MatrixXd::Zero(z_dim, z_dim);
 
     // Initialize Prior Estimates
     x_prior = x_hat;
-    z_prior = z;
     P_prior = P;
 
     // Initial Posterior Estimates
@@ -188,7 +227,7 @@ UKF::UKF(MerwedSigmaPoints merwed_sigma_points)
 
     // Compute mean and covariance using unscented transform
     Eigen::VectorXd z_prior;
-    Eigen::MatrixXd S;
+    z_prior = z;
 
     // Assign the sigma points into UKF class
     sigma_points = merwed_sigma_points;
@@ -197,19 +236,15 @@ UKF::UKF(MerwedSigmaPoints merwed_sigma_points)
     Z_sigma = Eigen::MatrixXd::Zero(sigma_points.num_sigma_points, z_dim); // Measurement sigma points
 
     // Initialize noise matrices
-    Q = Eigen::MatrixXd::Identity(x_dim, x_dim) * 0.001;    // Process Noise Matrix
+    Q = Eigen::MatrixXd::Identity(x_dim, x_dim) * 0.001;    // Process Noise Matrix //research
 
-    //R = Eigen::MatrixXd::Identity(z_dim, z_dim) * 0.1;
-    R = Eigen::MatrixXd::Identity(z_dim, z_dim) * 0.5;      // Measurement Noise Matrix
+    R = Eigen::MatrixXd::Identity(z_dim, z_dim) * 0.5;      // Measurement Noise Matrix //add noise covariance for each sensor from datasheet
 
     // Intialize inertial frame quantities
     g0 << 0, 0, 1;                          // Gravitational Acceleration Vector
     m0 << B_INTENSITY * cos(INCLINATION),   // Magnetic Field Intensity Vector
         0.0,
         B_INTENSITY* sin(INCLINATION);
-
-    // Eigen::VectorXd z_pred_sigma(11);
-	// z_pred_sigma << 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0;
 
 }
 /*** Destructor ***/
@@ -255,7 +290,7 @@ std::tuple<Eigen::VectorXd, Eigen::MatrixXd> UKF::unscented_transform(Eigen::Mat
 
     return std::make_tuple(mu, P_cov);
 }
-void UKF::predict_states(Eigen::VectorXd z_measurement, double dt)
+void UKF::predict_states(Eigen::VectorXd w, double dt) // what is dt
 {
     /***
     Predict with wheel odometry process model
@@ -268,7 +303,7 @@ void UKF::predict_states(Eigen::VectorXd z_measurement, double dt)
     for (int i = 0; i < sigma_points.num_sigma_points; i++)
     {
         // Predict with wheel odometry process model for sigma points
-        X_sigma.row(i) = process_model(sigmas.row(i), z_measurement, dt);
+        X_sigma.row(i) = process_model(sigmas.row(i), w, dt);
 
     }
 
@@ -285,7 +320,7 @@ void UKF::predict_states(Eigen::VectorXd z_measurement, double dt)
 }
 // --- Process & Measurement Model with Wheel Odometry ---
 // Process Model
-Eigen::VectorXd UKF::process_model(Eigen::VectorXd x, Eigen::VectorXd z_measurement, double dt)
+Eigen::VectorXd UKF::process_model(Eigen::VectorXd x, Eigen::VectorXd w, double dt)
 {
     /***
     Nonlinear process model for Wheel Odometry
@@ -297,10 +332,11 @@ Eigen::VectorXd UKF::process_model(Eigen::VectorXd x, Eigen::VectorXd z_measurem
 
     ***/
 
-    // Process encoder readings using Kinematic Model
-    // process(z_measurement) to get encoder readings and return[v, w].T
-    Eigen::VectorXd v_t;
+    // Process wheel speeds using Kinematic Model
+    ROVER rover;
+    rover.calculate_wheel_change(w, dt);
 
+    // considern changing this quaternion into UnitQuaternion
     Quaternion attitude(x(0),
         x(1),
         x(2),
@@ -330,12 +366,12 @@ Eigen::VectorXd UKF::process_model(Eigen::VectorXd x, Eigen::VectorXd z_measurem
 
     //position
     float yaw = atan2(2 * (x(0) * x(3) + x(1) * x(2)), (1 - 2 * (x(2) * x(2) + x(3) * x(3))));
-    x_pred_sigma(7) = x(7) + v_t(0) * cos(yaw) * dt; // define get_yaw function
-    x_pred_sigma(8) = x(8) + v_t(0) * sin(yaw) * dt;
+    x_pred_sigma(7) = x(7) + rover.velocity * cos(yaw) * dt; 
+    x_pred_sigma(8) = x(8) + rover.velocity * sin(yaw) * dt;
 
     return x_pred_sigma;
 }
-void UKF::predict_measurement(double dt, double lon0, double lat0)
+void UKF::predict_measurement(double dt, Eigen::VectorXd w, double lon0, double lat0)
 {
     /***
     Update step of UKF with Quaternion + Angular Velocity model i.e state space is:
@@ -351,7 +387,7 @@ void UKF::predict_measurement(double dt, double lon0, double lat0)
     for (int i = 0; i < sigma_points.num_sigma_points; i++)
     {
         // Update sigmas with measurement model
-        Z_sigma.row(i) = UKF::measurment_model(X_sigma.row(i) , lon0, lat0);
+        Z_sigma.row(i) = UKF::measurment_model(X_sigma.row(i) , w, lon0, lat0, dt);
     }
 
     std::tie(z_prior, S) = unscented_transform(Z_sigma,
@@ -360,7 +396,7 @@ void UKF::predict_measurement(double dt, double lon0, double lat0)
         R);
 }
 // Measurement Model
-Eigen::VectorXd UKF::measurment_model(Eigen::VectorXd x, double lon0, double lat0)
+Eigen::VectorXd UKF::measurment_model(Eigen::VectorXd x, Eigen::VectorXd w, double lon0, double lat0, double dt)
 {
     /***
     Nonlinear measurement model for Orientation estimation with Quaternions
@@ -372,7 +408,7 @@ Eigen::VectorXd UKF::measurment_model(Eigen::VectorXd x, double lon0, double lat
     z_pred_sigma: sigma point after being propagated through nonlinear measurement model
     ***/
     // --- Measurement model ---
-    // Extract quaternion from current state estimates
+    // Extract quaternion from current state estimates 
     UnitQuaternion attitude(x(0),
         x(1),
         x(2),
@@ -397,11 +433,12 @@ Eigen::VectorXd UKF::measurment_model(Eigen::VectorXd x, double lon0, double lat
     z_pred_sigma << gyro_pred, acc_pred, mag_pred;
 
     float yaw = atan2(2 * (x(0) * x(3) + x(1) * x(2)), 1 - 2 * (x(2) * x(2) + x(3) * x(3)));
-    // add function to convert encoder readings (u_t) to distance (d)
-    double d = 0;
 
-    double dx = d * cos(yaw);
-    double dy = d * sin(yaw);
+    ROVER rover;
+    rover.calculate_wheel_change(w, dt);
+
+    double dx = rover.d * cos(yaw);
+    double dy = rover.d * sin(yaw);
 
     double lat = lat0 + (180 / PI) * (dy / 6378137);
     double lon = lon0 + (180 / PI) * (dx / 6378137) / cos(lat0);
