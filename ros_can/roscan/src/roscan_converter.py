@@ -3,9 +3,10 @@
 import rospy
 import subprocess
 from std_msgs.msg import Int8MultiArray
-from sensor_msgs.msg import Imu
+from sensor_msgs.msg import Imu, NavSatFix
 from can_msgs.msg import Frame
-
+from localization.msg import imu
+from localization.msg import encoder
 
 class Handler:
 
@@ -20,9 +21,11 @@ class Handler:
         self.rate = rospy.Rate(10)
         # Create required ROS publishers
         self.imu_pub = rospy.Publisher(
-            "/sensors/imu", Imu, queue_size=10)
+            "/sensors/imu", imu, queue_size=10)
         self.encoders_pub = rospy.Publisher(
-            "/sensors/encoders", Int8MultiArray, queue_size=10)
+            "/sensors/encoders", encoder, queue_size=10)
+        self.gps_pub = rospy.Publisher(
+            "/sensors/gps", NavSatFix, queue_size=10)
         self.can_pub = rospy.Publisher(
             "/sent_messages", Frame, queue_size=10)
         # Subscribe to required topics
@@ -57,13 +60,19 @@ class Handler:
                 data_frame: bytes = self.rec_frame.data[:self.rec_frame.dlc]
                 # Encoders message
                 if self.rec_frame.id == 1:
-                    encoders_msg: Int8MultiArray = self.get_encoders(
-                        data_frame)
+                    encoders_msg: encoder = self.get_encoders(data_frame)
                     self.encoders_pub.publish(encoders_msg)
                 # IMU message
                 elif self.rec_frame.id == 2:
-                    imu_msg: Imu = self.get_imu(data_frame)
+                    imu_msg: imu = self.get_imu(data_frame)
                     self.imu_pub.publish(imu_msg)
+                # GPS message
+                elif self.rec_frame.id == 3:
+                    gps_msg: NavSatFix = self.get_gps(data_frame)
+                    self.gps_pub.publish(gps_msg)
+                else:
+                    rospy.logerr("Received an unknown CAN message with id: {}"
+                                 .format(self.rec_frame.id))
                 self.rec_frame = None
             self.rate.sleep()
 
@@ -88,8 +97,8 @@ class Handler:
                         self.encoders_map for rec_reading in data_frame]
         return encoders_msg
 
-    def get_imu(self, data_frame: bytes) -> Imu:
-        imu_msg: Imu = Imu()
+    def get_imu(self, data_frame: bytes) -> imu:
+        imu_msg: imu = imu()
         lin_acc_x: float = (((data_frame[1] << 8) | data_frame[0]) / 100) - 360
         lin_acc_y: float = (((data_frame[3] << 8) | data_frame[2]) / 100) - 360
         yaw_angle: float = (((data_frame[5] << 8) | data_frame[4]) / 100) - 360
@@ -101,6 +110,18 @@ class Handler:
         imu_msg.orientation.z = yaw_angle
         imu_msg.angular_velocity.z = yaw_rate
         return imu_msg
+
+    def get_gps(self, data_frame: bytes) -> NavSatFix:
+        gps_msg: NavSatFix = NavSatFix()
+        ###################################
+        # add processing on the data_frame to get the latitude, longitude and altitude
+        ###################################
+        gps_msg.header.stamp = rospy.Time.now()
+        gps_msg.header.frame_id = "gps_frame"
+        gps_msg.latitude = latitude
+        gps_msg.longitude = longitude
+        gps_msg.altitude = altitude
+        return gps_msg
 
 
 if __name__ == '__main__':
