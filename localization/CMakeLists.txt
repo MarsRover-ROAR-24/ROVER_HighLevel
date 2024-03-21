@@ -32,6 +32,7 @@ catkin_package(
   rospy
   std_msgs
   roar_msgs
+  geometry_msgs
   message_runtime
   INCLUDE_DIRS include 
 )
