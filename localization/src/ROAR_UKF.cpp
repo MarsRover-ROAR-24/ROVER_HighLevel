@@ -1,4 +1,6 @@
 ﻿#include "ROAR_UKF.h"
+#include <iostream>
+using namespace std;
 ROVER::ROVER()
 {
     /***
@@ -166,6 +168,7 @@ Eigen::MatrixXd MerwedSigmaPoints::calculate_sigma_points(Eigen::VectorXd mean, 
     sigma_points.row(0) = mean.transpose();
     for (int i = 1; i < num_sigma_points; i++)
     {
+        cout << "i: " << i << ", n: " << n << ", U.rows(): " << U.rows() << endl;
         if (i <= n)
         {
             sigma_points.row(i) = mean.transpose() + U.row(i - 1);
@@ -175,7 +178,6 @@ Eigen::MatrixXd MerwedSigmaPoints::calculate_sigma_points(Eigen::VectorXd mean, 
             sigma_points.row(i) = mean.transpose() - U.row(i - n - 1);
         }
     }
-
     return sigma_points;
 }
 UKF::UKF(MerwedSigmaPoints merwed_sigma_points)
@@ -212,9 +214,7 @@ UKF::UKF(MerwedSigmaPoints merwed_sigma_points)
     z = Eigen::VectorXd::Zero(z_dim); // Initial measurement in frame {B}, [z_gyro, z_acc, z_mag].T
 
     // Intialize Posteriori Estimate Covariance Matrix
-    Eigen::MatrixXd P;
     P = Eigen::MatrixXd::Zero(x_dim, x_dim);
-    Eigen::MatrixXd S;
     S = Eigen::MatrixXd::Zero(z_dim, z_dim);
 
     // Initialize Prior Estimates

@@ -123,24 +123,23 @@ public:
 	/*** Destructors ***/
 	virtual ~UKF();
 
+	std::tuple<Eigen::VectorXd, Eigen::MatrixXd> unscented_transform(Eigen::MatrixXd sigmas,
+			Eigen::MatrixXd Wm,
+			Eigen::MatrixXd Wc,
+			Eigen::MatrixXd noise_cov);
 
-std::tuple<Eigen::VectorXd, Eigen::MatrixXd> unscented_transform(Eigen::MatrixXd sigmas,
-		Eigen::MatrixXd Wm,
-		Eigen::MatrixXd Wc,
-		Eigen::MatrixXd noise_cov);
 
+	/*** Position Prediction ***/
 
-/*** Position Prediction ***/
+	void predict_states(Eigen::VectorXd w, double dt);
+	Eigen::VectorXd process_model(Eigen::VectorXd x, Eigen::VectorXd w, double dt);
 
-void predict_states(Eigen::VectorXd w, double dt);
-Eigen::VectorXd process_model(Eigen::VectorXd x, Eigen::VectorXd w, double dt);
+	/** measurnment prediction*/
+	void predict_measurement(double dt, Eigen::VectorXd w, double lon0, double lat0);
+	Eigen::VectorXd measurment_model(Eigen::VectorXd x, Eigen::VectorXd w, double lon0, double lat0, double dt);
 
-/** measurnment prediction*/
-void predict_measurement(double dt, Eigen::VectorXd w, double lon0, double lat0);
-Eigen::VectorXd measurment_model(Eigen::VectorXd x, Eigen::VectorXd w, double lon0, double lat0, double dt);
-
-/*** update step***/
-void update(Eigen::MatrixXd z_measurement);
+	/*** update step***/
+	void update(Eigen::MatrixXd z_measurement);
 
 };
 #endif
