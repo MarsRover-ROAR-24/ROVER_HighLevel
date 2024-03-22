@@ -10,6 +10,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   roar_msgs
   geometry_msgs
+  gazebo_msgs
   message_generation
 )
 find_package (Eigen3 3.3 REQUIRED NO_MODULE)
@@ -32,6 +33,7 @@ catkin_package(
   rospy
   std_msgs
   roar_msgs
+  gazebo_msgs
   geometry_msgs
   message_runtime
   INCLUDE_DIRS include 
@@ -55,6 +57,10 @@ add_dependencies(publisher localization_generate_messages_cpp)
 target_link_libraries(publisher ${catkin_LIBRARIES} Eigen3::Eigen)
 target_include_directories(publisher PRIVATE include)
 
+
+add_executable(ROAR_main_simulation src/ROAR_main_simulation.cpp src/ROAR_UKF.cpp src/Quaternion.cpp)
+target_link_libraries(ROAR_main_simulation ${catkin_LIBRARIES} Eigen3::Eigen)
+target_include_directories(ROAR_main_simulation PRIVATE include)
 
 # add_executable(simulation_testing src/simulation_testing.cpp  src/Quaternion.cpp src/UKF.cpp)
 # target_link_libraries(simulation_testing ${catkin_LIBRARIES} Eigen3::Eigen)
