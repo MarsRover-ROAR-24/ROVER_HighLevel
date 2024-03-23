@@ -168,7 +168,6 @@ Eigen::MatrixXd MerwedSigmaPoints::calculate_sigma_points(Eigen::VectorXd mean, 
     sigma_points.row(0) = mean.transpose();
     for (int i = 1; i < num_sigma_points; i++)
     {
-        cout << "i: " << i << ", n: " << n << ", U.rows(): " << U.rows() << endl;
         if (i <= n)
         {
             sigma_points.row(i) = mean.transpose() + U.row(i - 1);
@@ -226,7 +225,6 @@ UKF::UKF(MerwedSigmaPoints merwed_sigma_points)
     P_post = P;
 
     // Compute mean and covariance using unscented transform
-    Eigen::VectorXd z_prior;
     z_prior = z;
 
     // Assign the sigma points into UKF class
@@ -306,6 +304,7 @@ void UKF::predict_states(Eigen::VectorXd w, double dt) // what is dt
         X_sigma.row(i) = process_model(sigmas.row(i), w, dt);
 
     }
+    cout << "X_sigma: " << X_sigma << endl;
 
     // Compute unscented mean and covariance
     std::tie(x_hat, P) = unscented_transform(X_sigma,
@@ -334,6 +333,7 @@ Eigen::VectorXd UKF::process_model(Eigen::VectorXd x, Eigen::VectorXd w, double 
 
     // Process wheel speeds using Kinematic Model
     ROVER rover;
+    cout << "Check point" << endl;
     rover.calculate_wheel_change(w, dt);
 
     // considern changing this quaternion into UnitQuaternion
