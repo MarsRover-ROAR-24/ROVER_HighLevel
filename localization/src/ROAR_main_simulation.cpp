@@ -10,10 +10,10 @@ using namespace std;
 Eigen::Vector3d acc_measurement;
 Eigen::Vector3d gyro_measurement;
 Eigen::Vector3d mag_measurement ;
-Eigen::VectorXd gps_measurement ;
+Eigen::Vector2d gps_measurement ;
 Eigen::VectorXd z_measurement;
 // Eigen::VectorXd encoder_measurement = Eigen::VectorXd::Ones(2);
-Eigen::VectorXd encoder_measurement;
+Eigen::Vector2d encoder_measurement;
 
 const int n_state_dim = 9;  // x_state dimension
 const float alpha = 0.3;
@@ -86,12 +86,11 @@ int main(int argc, char **argv)
 	UKF ukf(sigma_points);
 
     ros::Rate loop_rate(10);
+    encoder_measurement << 0, 0;
 
     while (ros::ok())
     {   
-        cout << "HI" << encoder_measurement << endl;
         ukf.predict_states(encoder_measurement, dt);
-        cout << "check" << endl;
         ukf.predict_measurement(dt,encoder_measurement,lat0, lon0);
 
         z_measurement << gyro_measurement, acc_measurement, mag_measurement, gps_measurement;
