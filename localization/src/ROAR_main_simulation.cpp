@@ -9,10 +9,10 @@
 using namespace std;
 Eigen::Vector3d acc_measurement;
 Eigen::Vector3d gyro_measurement;
-Eigen::Vector3d mag_measurement;
-Eigen::VectorXd encoder_measurement;
-Eigen::VectorXd gps_measurement;
+Eigen::Vector3d mag_measurement ;
+Eigen::VectorXd gps_measurement ;
 Eigen::VectorXd z_measurement;
+Eigen::VectorXd encoder_measurement = Eigen::VectorXd::Zero(2);
 
 const int n_state_dim = 9;  // x_state dimension
 const float alpha = 0.3;
@@ -27,6 +27,7 @@ double lon0 = 0.0;
 // Callback function to handle incoming IMU messages
 void imuCallback(const sensor_msgs::Imu::ConstPtr& msg)
 {
+    cout << "IMU Callback" << endl;
     // --- Store data into matrices ---
     // Accelerometer (m/s^2)
     acc_measurement << msg->linear_acceleration.x,
@@ -59,9 +60,7 @@ void gpsCallback(const sensor_msgs::NavSatFix::ConstPtr& msg)
     }
 
     gps_measurement << msg->latitude,
-                    msg->longitude,
-                    msg->altitude;
-
+                    msg->longitude;
 }
 
 void magCallback(const geometry_msgs::Vector3Stamped& msg)

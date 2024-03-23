@@ -30,10 +30,12 @@ void ROVER::calculate_wheel_change(Eigen::VectorXd w, double dt)
         velocity: Linear velocity of rover
         omega: Angular velocity of rover
     ***/
-   
+   cout << "W:" << w << endl;
     velocity = a1 * w(0) + a2 * w(1);
+   cout << "check point" << endl;
     omega = a3 * w(0) + a4 * w(1);
     d = velocity * dt;
+    cout << velocity << endl << omega << endl << d << endl;
 }
 ROVER::~ROVER()
 {
@@ -177,6 +179,7 @@ Eigen::MatrixXd MerwedSigmaPoints::calculate_sigma_points(Eigen::VectorXd mean, 
             sigma_points.row(i) = mean.transpose() - U.row(i - n - 1);
         }
     }
+    cout << "Sigma Points: " << sigma_points << endl;
     return sigma_points;
 }
 UKF::UKF(MerwedSigmaPoints merwed_sigma_points)
@@ -333,7 +336,7 @@ Eigen::VectorXd UKF::process_model(Eigen::VectorXd x, Eigen::VectorXd w, double 
 
     // Process wheel speeds using Kinematic Model
     ROVER rover;
-    cout << "Check point" << endl;
+    // cout << "Check point" << endl;
     rover.calculate_wheel_change(w, dt);
 
     // considern changing this quaternion into UnitQuaternion
