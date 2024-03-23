@@ -12,7 +12,8 @@ Eigen::Vector3d gyro_measurement;
 Eigen::Vector3d mag_measurement ;
 Eigen::VectorXd gps_measurement ;
 Eigen::VectorXd z_measurement;
-Eigen::VectorXd encoder_measurement = Eigen::VectorXd::Zero(2);
+// Eigen::VectorXd encoder_measurement = Eigen::VectorXd::Ones(2);
+Eigen::VectorXd encoder_measurement;
 
 const int n_state_dim = 9;  // x_state dimension
 const float alpha = 0.3;
@@ -42,11 +43,11 @@ void imuCallback(const sensor_msgs::Imu::ConstPtr& msg)
 // Call back function to handle incoming encoder messages
 void encoderCallback(const gazebo_msgs::LinkStates::ConstPtr& msg)
 {
+    cout << "Encoder Callback" << endl;
     double left_wheels = (msg->twist[3].angular.z + msg->twist[4].angular.z + msg->twist[5].angular.z) / 3;
     double right_wheels = (msg->twist[7].angular.z + msg->twist[8].angular.z + msg->twist[9].angular.z) / 3;
 
     encoder_measurement << right_wheels, left_wheels;
-
 }
 
 // Call back function to handle incoming gps messages
@@ -67,8 +68,8 @@ void magCallback(const geometry_msgs::Vector3Stamped& msg)
 {
     // Magnetometer (uT)
     mag_measurement << (msg.vector.x) * 1e-6,
-                (msg.vector.y) * 1e-6,
-                (msg.vector.z) * 1e-6;
+                       (msg.vector.y) * 1e-6,
+                       (msg.vector.z) * 1e-6;
 }
 
 int main(int argc, char **argv) 
@@ -87,8 +88,10 @@ int main(int argc, char **argv)
     ros::Rate loop_rate(10);
 
     while (ros::ok())
-    {    
+    {   
+        cout << "HI" << encoder_measurement << endl;
         ukf.predict_states(encoder_measurement, dt);
+        cout << "check" << endl;
         ukf.predict_measurement(dt,encoder_measurement,lat0, lon0);
 
         z_measurement << gyro_measurement, acc_measurement, mag_measurement, gps_measurement;
