@@ -379,7 +379,7 @@ void UKF::predict_measurement(double dt, Eigen::VectorXd w, double lon0, double 
     Inputs:
     z_measurement: Sensor measurements from gyroscope, accelerometer and magnetometer
     ***/
-
+   
     // Pass the transformed sigmas into measurement function
     for (int i = 0; i < sigma_points.num_sigma_points; i++)
     {
@@ -420,14 +420,9 @@ Eigen::VectorXd UKF::measurment_model(Eigen::VectorXd x, Eigen::VectorXd w, doub
     // Magnetomer
     Eigen::VectorXd mag_pred = invq.vector_rotation_by_quaternion(m0);
 
-
     // Gyroscope
     Eigen::VectorXd gyro_pred(3);
     gyro_pred << x(4), x(5), x(6);
-
-    // Z prediction
-    Eigen::VectorXd z_pred_sigma(11);
-    z_pred_sigma << gyro_pred, acc_pred, mag_pred;
 
     float yaw = atan2(2 * (x(0) * x(3) + x(1) * x(2)), 1 - 2 * (x(2) * x(2) + x(3) * x(3)));
 
@@ -440,9 +435,12 @@ Eigen::VectorXd UKF::measurment_model(Eigen::VectorXd x, Eigen::VectorXd w, doub
     double lat = lat0 + (180 / PI) * (dy / 6378137);
     double lon = lon0 + (180 / PI) * (dx / 6378137) / cos(lat0);
 
-    z_pred_sigma << lat, lon;
+    // Z prediction
+    Eigen::VectorXd z_pred_sigma(11);
+    z_pred_sigma << gyro_pred, acc_pred, mag_pred, lat, lon;
 
     return z_pred_sigma;
+
 }
 void UKF::update(Eigen::MatrixXd z_measurement)
 {
@@ -456,6 +454,11 @@ void UKF::update(Eigen::MatrixXd z_measurement)
                     	z_measurement: Sensor measurements from gyroscope, accelerometer and magnetometer
                         	***/
 
+    cout <<  sigma_points.Wc(0) << endl;
+    cout << (X_sigma.row(0) - x_prior.transpose()) << endl;
+    cout << (Z_sigma.row(0) - z_prior.transpose()).transpose() << endl;
+
+    cout << sigma_points.Wc(0) * (X_sigma.row(0) - x_prior.transpose()) * ((Z_sigma.row(0) - z_prior.transpose()).transpose()) << endl;
 	// Compute cross covariance
 	Eigen::MatrixXd T = Eigen::MatrixXd::Zero(x_dim, z_dim);
     for (int i = 0; i < sigma_points.num_sigma_points; i++)

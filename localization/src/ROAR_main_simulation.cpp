@@ -12,7 +12,6 @@ Eigen::Vector3d gyro_measurement;
 Eigen::Vector3d mag_measurement ;
 Eigen::Vector2d gps_measurement ;
 Eigen::VectorXd z_measurement;
-// Eigen::VectorXd encoder_measurement = Eigen::VectorXd::Ones(2);
 Eigen::Vector2d encoder_measurement;
 
 const int n_state_dim = 9;  // x_state dimension
@@ -82,11 +81,17 @@ int main(int argc, char **argv)
     ros::Subscriber gps_sub = nh.subscribe("/gps", 1000, gpsCallback);
     ros::Subscriber mag_sub = nh.subscribe("/magnetometer", 1000, magCallback);
 
+    encoder_measurement = Eigen::Vector2d::Zero(2);
+    z_measurement = Eigen::VectorXd::Zero(11);
+    acc_measurement = Eigen::Vector3d::Zero(3);
+    gyro_measurement = Eigen::Vector3d::Zero(3);
+    mag_measurement = Eigen::Vector3d::Zero(3);
+    gps_measurement = Eigen::Vector2d::Zero(2);
+
 	MerwedSigmaPoints sigma_points(n_state_dim, alpha, beta_, kappa);
 	UKF ukf(sigma_points);
 
     ros::Rate loop_rate(10);
-    encoder_measurement << 0, 0;
 
     while (ros::ok())
     {   
@@ -95,7 +100,7 @@ int main(int argc, char **argv)
 
         z_measurement << gyro_measurement, acc_measurement, mag_measurement, gps_measurement;
         ukf.update(z_measurement);
-
+        
         // --- Output to Serial ---
         cout << "x_prior: " << ukf.x_prior << endl;
         cout << "P_prior: " << ukf.P_prior << endl;
