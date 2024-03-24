@@ -154,7 +154,7 @@ Eigen::MatrixXd MerwedSigmaPoints::calculate_sigma_points(Eigen::VectorXd mean, 
     sigma_points: (2n+1) Merwe Sigma Points
     ***/
     // Init sigma point array
-    Eigen::MatrixXd sigma_points = Eigen::MatrixXd::Zero(num_sigma_points, n); // Sigma points Matrix is transposed
+    Eigen::MatrixXd sigma_points = Eigen::MatrixXd::Zero(n, num_sigma_points); // Sigma points Matrix is not transposed
 
     // Square root of (n + lambda) * cov
     double lambda_ = alpha * alpha * (n + kappa) - n;
@@ -164,17 +164,11 @@ Eigen::MatrixXd MerwedSigmaPoints::calculate_sigma_points(Eigen::VectorXd mean, 
     Eigen::MatrixXd U = lltOfA.matrixU();                           // retrieve factor U  in the decomposition (upper)
 
     // Calculate sigma points
-    sigma_points.row(0) = mean.transpose();
-    for (int i = 1; i < num_sigma_points; i++)
+    sigma_points.col(0) = mean; // First column corresponds to the mean
+    for (int i = 0; i < n; i++)
     {
-        if (i <= n)
-        {
-            sigma_points.row(i) = mean.transpose() + U.row(i - 1);
-        }
-        else
-        {
-            sigma_points.row(i) = mean.transpose() - U.row(i - n - 1);
-        }
+        sigma_points.col(i + 1) = mean + U.col(i); // Positive sigma points
+        sigma_points.col(i + n + 1) = mean - U.col(i); // Negative sigma points
     }
     return sigma_points;
 }
@@ -229,8 +223,8 @@ UKF::UKF(MerwedSigmaPoints merwed_sigma_points)
     // Assign the sigma points into UKF class
     sigma_points = merwed_sigma_points;
 
-    X_sigma = Eigen::MatrixXd::Zero(sigma_points.num_sigma_points, x_dim); // Predicted sigma points
-    Z_sigma = Eigen::MatrixXd::Zero(sigma_points.num_sigma_points, z_dim); // Measurement sigma points
+    X_sigma = Eigen::MatrixXd::Zero(x_dim, sigma_points.num_sigma_points); // Predicted sigma points
+    Z_sigma = Eigen::MatrixXd::Zero(z_dim, sigma_points.num_sigma_points); // Measurement sigma points
 
     // Initialize noise matrices
     Q = Eigen::MatrixXd::Identity(x_dim, x_dim) * 0.001;    // Process Noise Matrix //research
@@ -269,21 +263,21 @@ std::tuple<Eigen::VectorXd, Eigen::MatrixXd> UKF::unscented_transform(Eigen::Mat
     P_cov: Covariance from unscented transform computation
     ***/
     // Compute new mean
-    Eigen::VectorXd mu = sigmas.transpose() * Wm;   // Vectorization of sum(wm_i* sigma_i)
+    Eigen::VectorXd mu = sigmas * Wm;   // Vectorization of sum(wm_i* sigma_i)
 
     // Compute new covariance matrix
-    int kmax = sigmas.rows();
-    int n = sigmas.cols();
+    int kmax = sigmas.cols(); // Number of columns instead of rows
+    int n = sigmas.rows();    // Number of rows
     Eigen::MatrixXd P_cov = Eigen::MatrixXd::Zero(n, n);
 
     for (int k = 0; k < kmax; k++)
     {
-        Eigen::VectorXd y = sigmas.row(k) - mu.transpose();
-        P_cov = P_cov + Wc(k) * y * y.transpose();
+        Eigen::VectorXd y = sigmas.col(k) - mu;
+        P_cov += Wc(k) * y * y.transpose();
     }
 
     // Add noise
-    P_cov = P_cov + noise_cov;
+    P_cov += noise_cov;
 
     return std::make_tuple(mu, P_cov);
 }
@@ -300,8 +294,7 @@ void UKF::predict_states(Eigen::VectorXd w, double dt) // what is dt
     for (int i = 0; i < sigma_points.num_sigma_points; i++)
     {
         // Predict with wheel odometry process model for sigma points
-        X_sigma.row(i) = process_model(sigmas.row(i), w, dt);
-
+        X_sigma.col(i) = process_model(sigmas.col(i), w, dt);
     }
 
     // Compute unscented mean and covariance
@@ -384,7 +377,7 @@ void UKF::predict_measurement(double dt, Eigen::VectorXd w, double lon0, double 
     for (int i = 0; i < sigma_points.num_sigma_points; i++)
     {
         // Update sigmas with measurement model
-        Z_sigma.row(i) = UKF::measurment_model(X_sigma.row(i) , w, lon0, lat0, dt);
+        Z_sigma.col(i) = UKF::measurment_model(X_sigma.col(i) , w, lon0, lat0, dt);
     }
 
     std::tie(z_prior, S) = unscented_transform(Z_sigma,
@@ -454,16 +447,11 @@ void UKF::update(Eigen::MatrixXd z_measurement)
                     	z_measurement: Sensor measurements from gyroscope, accelerometer and magnetometer
                         	***/
 
-    cout <<  sigma_points.Wc(0) << endl;
-    cout << (X_sigma.row(0) - x_prior.transpose()) << endl;
-    cout << (Z_sigma.row(0) - z_prior.transpose()).transpose() << endl;
-
-    cout << sigma_points.Wc(0) * (X_sigma.row(0) - x_prior.transpose()) * ((Z_sigma.row(0) - z_prior.transpose()).transpose()) << endl;
 	// Compute cross covariance
 	Eigen::MatrixXd T = Eigen::MatrixXd::Zero(x_dim, z_dim);
     for (int i = 0; i < sigma_points.num_sigma_points; i++)
     {
-		T = T + sigma_points.Wc(i) * (X_sigma.row(i) - x_hat.transpose()) * (Z_sigma.row(i) - z_prior.transpose());
+		T = T + sigma_points.Wc(i) * (X_sigma.col(i) - x_hat) * (Z_sigma.col(i) - z_prior).transpose();
 	}
 
 	// Compute Kalman gain

@@ -27,7 +27,7 @@ double lon0 = 0.0;
 // Callback function to handle incoming IMU messages
 void imuCallback(const sensor_msgs::Imu::ConstPtr& msg)
 {
-    cout << "IMU Callback" << endl;
+    // cout << "IMU Callback" << endl;
     // --- Store data into matrices ---
     // Accelerometer (m/s^2)
     acc_measurement << msg->linear_acceleration.x,
@@ -42,7 +42,7 @@ void imuCallback(const sensor_msgs::Imu::ConstPtr& msg)
 // Call back function to handle incoming encoder messages
 void encoderCallback(const gazebo_msgs::LinkStates::ConstPtr& msg)
 {
-    cout << "Encoder Callback" << endl;
+    // cout << "Encoder Callback" << endl;
     double left_wheels = (msg->twist[3].angular.z + msg->twist[4].angular.z + msg->twist[5].angular.z) / 3;
     double right_wheels = (msg->twist[7].angular.z + msg->twist[8].angular.z + msg->twist[9].angular.z) / 3;
 
@@ -52,6 +52,7 @@ void encoderCallback(const gazebo_msgs::LinkStates::ConstPtr& msg)
 // Call back function to handle incoming gps messages
 void gpsCallback(const sensor_msgs::NavSatFix::ConstPtr& msg)
 {
+    // cout << "GPS Callback" << endl;
     if (gps_started)
     {
         lat0 = msg->latitude;
@@ -101,14 +102,14 @@ int main(int argc, char **argv)
         z_measurement << gyro_measurement, acc_measurement, mag_measurement, gps_measurement;
         ukf.update(z_measurement);
         
-        // --- Output to Serial ---
-        cout << "x_prior: " << ukf.x_prior << endl;
-        cout << "P_prior: " << ukf.P_prior << endl;
+        // // --- Output to Serial ---
+        // cout << "x_prior: " << ukf.x_prior << endl;
+        // cout << "P_prior: " << ukf.P_prior << endl;
 
-        cout << "x_posterior: " << ukf.x_post << endl;
-        cout << "P_posterior: " << ukf.P_post << endl;
+        cout << "x_posterior: " << endl << ukf.x_post << endl;
+        // cout << "P_posterior: " << ukf.P_post << endl;
 
-        cout << "measurements" << z_measurement << endl;
+        // cout << "measurements" << z_measurement << endl;
 
         ros::spinOnce();
         
