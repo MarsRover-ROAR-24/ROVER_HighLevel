@@ -1,0 +1,23 @@
+#! /usr/bin/env python
+
+import rospy
+import message_filters
+from sensor_msgs.msg import Imu, JointState
+
+rospy.init_node("sync_test")
+
+
+def sync_callback(Imu, JointState):
+    print("got a sync")
+    print(Imu.header.stamp)
+    print(JointState.header.stamp)
+
+
+imu_sub = message_filters.Subscriber("imu", Imu)
+Joint_State_sub = message_filters.Subscriber("joint_states", JointState)
+
+ots = message_filters.ApproximateTimeSynchronizer(
+    [imu_sub, Joint_State_sub], queue_size=5, slop=0.03
+)
+ots.registerCallback(sync_callback)
+rospy.spin()
