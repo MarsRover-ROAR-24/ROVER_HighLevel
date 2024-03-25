@@ -27,9 +27,9 @@ class ControlApp(Tk, object):
         self.bind("<KeyRelease>", self.keyup)
 
     def config(self) -> None:
-        self.forw = 1
+        self.forw = 1.57
         self.stop = 0
-        self.back = -1
+        self.back = -1.57
         self.speeds_msg = Int8MultiArray()
 
     def keydown(self, event: Event) -> None:
