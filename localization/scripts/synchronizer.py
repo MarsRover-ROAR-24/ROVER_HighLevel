@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-
 import rospy
 import message_filters
 from sensor_msgs.msg import Imu, JointState
