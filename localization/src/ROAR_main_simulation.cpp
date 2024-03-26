@@ -4,8 +4,10 @@
 #include <sensor_msgs/NavSatFix.h>
 #include <geometry_msgs/Vector3Stamped.h>
 #include <sensor_msgs/Imu.h>
+#include <chrono>
 
 using namespace std;
+
 Eigen::VectorXd acc_measurement;
 Eigen::VectorXd gyro_measurement;
 Eigen::VectorXd mag_measurement ;
@@ -17,7 +19,7 @@ const int n_state_dim = 9;  // x_state dimension
 const float alpha = 0.3;
 const float beta_ = 2.0;
 const float kappa = 0.1;
-const float dt = 0.01;
+double dt = 1e-08;
 
 bool gps_started = true;
 double lat0 = 0.0;
@@ -29,7 +31,7 @@ void imuCallback(const sensor_msgs::Imu::ConstPtr& msg)
     acc_measurement.resize(3);
     gyro_measurement.resize(3);
 
-    cout << "IMU Callback" << endl;
+    // cout << "IMU Callback" << endl;
     // --- Store data into matrices ---
     // Accelerometer (m/s^2)
     acc_measurement << msg->linear_acceleration.x,
@@ -46,7 +48,7 @@ void encoderCallback(const sensor_msgs::JointState::ConstPtr& msg)
 {
     encoder_measurement.resize(2);
     if (msg->velocity.size() != 6) return;
-    cout << "Encoder Callback" << endl;
+    // cout << "Encoder Callback" << endl;
     double left_wheels = (msg->velocity[0]+ msg->velocity[1]+ msg->velocity[2]) / 3;
     double right_wheels = (msg->velocity[3] + msg->velocity[4] + msg->velocity[5]) / 3;
     
@@ -57,7 +59,7 @@ void encoderCallback(const sensor_msgs::JointState::ConstPtr& msg)
 void gpsCallback(const sensor_msgs::NavSatFix::ConstPtr& msg)
 {
     gps_measurement.resize(2);
-    cout << "GPS Callback" << endl;
+    // cout << "GPS Callback" << endl;
     if (gps_started)
     {
         lat0 = msg->latitude;
@@ -71,7 +73,7 @@ void gpsCallback(const sensor_msgs::NavSatFix::ConstPtr& msg)
 
 void magCallback(const geometry_msgs::Vector3Stamped& msg)
 {
-    cout << "Magnetometer Callback" << endl;
+    // cout << "Magnetometer Callback" << endl;
     mag_measurement.resize(3);
     // Magnetometer (uT)
     mag_measurement << (msg.vector.x) * 1e-6,
@@ -103,6 +105,8 @@ int main(int argc, char **argv)
 
     while (ros::ok())
     {   
+        chrono::steady_clock::time_point begin = chrono::steady_clock::now();
+
         ukf.predict_states(encoder_measurement, dt);
         ukf.predict_measurement(dt,encoder_measurement,lat0, lon0);
 
@@ -110,13 +114,17 @@ int main(int argc, char **argv)
         ukf.update(z_measurement);
         
         // // --- Output to Serial ---
-        // cout << "x_prior: " << ukf.x_prior << endl;
+        cout << "x_prior: " << ukf.x_prior << endl;
         // cout << "P_prior: " << ukf.P_prior << endl;
 
-        cout << "x_posterior: " << endl << ukf.x_post << endl;
+        // cout << "x_posterior: " << endl << ukf.x_post << endl;
         // cout << "P_posterior: " << ukf.P_post << endl;
 
         // cout << "measurements" << z_measurement << endl;
+
+        chrono::steady_clock::time_point end = chrono::steady_clock::now();
+
+        dt = (chrono::duration_cast<chrono::nanoseconds> (end - begin).count()) / 1e09;
 
         ros::spinOnce();
         
