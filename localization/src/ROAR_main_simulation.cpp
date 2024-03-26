@@ -4,15 +4,14 @@
 #include <sensor_msgs/NavSatFix.h>
 #include <geometry_msgs/Vector3Stamped.h>
 #include <sensor_msgs/Imu.h>
-#include <gazebo_msgs/LinkStates.h>
 
 using namespace std;
-Eigen::Vector3d acc_measurement;
-Eigen::Vector3d gyro_measurement;
-Eigen::Vector3d mag_measurement ;
-Eigen::Vector2d gps_measurement ;
+Eigen::VectorXd acc_measurement;
+Eigen::VectorXd gyro_measurement;
+Eigen::VectorXd mag_measurement ;
+Eigen::VectorXd gps_measurement ;
 Eigen::VectorXd z_measurement;
-Eigen::Vector2d encoder_measurement;
+Eigen::VectorXd encoder_measurement;
 
 const int n_state_dim = 9;  // x_state dimension
 const float alpha = 0.3;
@@ -27,7 +26,10 @@ double lon0 = 0.0;
 // Callback function to handle incoming IMU messages
 void imuCallback(const sensor_msgs::Imu::ConstPtr& msg)
 {
-    // cout << "IMU Callback" << endl;
+    acc_measurement.resize(3);
+    gyro_measurement.resize(3);
+
+    cout << "IMU Callback" << endl;
     // --- Store data into matrices ---
     // Accelerometer (m/s^2)
     acc_measurement << msg->linear_acceleration.x,
@@ -40,19 +42,22 @@ void imuCallback(const sensor_msgs::Imu::ConstPtr& msg)
                     msg->angular_velocity.z;
 }
 // Call back function to handle incoming encoder messages
-void encoderCallback(const gazebo_msgs::LinkStates::ConstPtr& msg)
+void encoderCallback(const sensor_msgs::JointState::ConstPtr& msg)
 {
-    // cout << "Encoder Callback" << endl;
-    double left_wheels = (msg->twist[3].angular.z + msg->twist[4].angular.z + msg->twist[5].angular.z) / 3;
-    double right_wheels = (msg->twist[7].angular.z + msg->twist[8].angular.z + msg->twist[9].angular.z) / 3;
-
+    encoder_measurement.resize(2);
+    if (msg->velocity.size() != 6) return;
+    cout << "Encoder Callback" << endl;
+    double left_wheels = (msg->velocity[0]+ msg->velocity[1]+ msg->velocity[2]) / 3;
+    double right_wheels = (msg->velocity[3] + msg->velocity[4] + msg->velocity[5]) / 3;
+    
     encoder_measurement << right_wheels, left_wheels;
 }
 
 // Call back function to handle incoming gps messages
 void gpsCallback(const sensor_msgs::NavSatFix::ConstPtr& msg)
 {
-    // cout << "GPS Callback" << endl;
+    gps_measurement.resize(2);
+    cout << "GPS Callback" << endl;
     if (gps_started)
     {
         lat0 = msg->latitude;
@@ -66,6 +71,8 @@ void gpsCallback(const sensor_msgs::NavSatFix::ConstPtr& msg)
 
 void magCallback(const geometry_msgs::Vector3Stamped& msg)
 {
+    cout << "Magnetometer Callback" << endl;
+    mag_measurement.resize(3);
     // Magnetometer (uT)
     mag_measurement << (msg.vector.x) * 1e-6,
                        (msg.vector.y) * 1e-6,
@@ -78,7 +85,7 @@ int main(int argc, char **argv)
     ros::NodeHandle nh;
 
     ros::Subscriber imu_sub = nh.subscribe("/imu", 1000, imuCallback);
-    ros::Subscriber encoder_sub = nh.subscribe("/gazebo/link_states", 1000, encoderCallback);
+    ros::Subscriber encoder_sub = nh.subscribe("/joint_states", 1000, encoderCallback);
     ros::Subscriber gps_sub = nh.subscribe("/gps", 1000, gpsCallback);
     ros::Subscriber mag_sub = nh.subscribe("/magnetometer", 1000, magCallback);
 

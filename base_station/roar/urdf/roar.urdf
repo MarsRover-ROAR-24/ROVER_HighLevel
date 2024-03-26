@@ -385,7 +385,7 @@
   <gazebo>
     <plugin name="novatel_gps_sim" filename="libhector_gazebo_ros_gps.so">
       <alwaysOn>1</alwaysOn>
-      <updateRate>10.0</updateRate>
+      <updateRate>20.0</updateRate>
       <bodyName>base_link</bodyName>
       <topicName>gps</topicName>
       <velocityTopicName>fix_velocity</velocityTopicName>
