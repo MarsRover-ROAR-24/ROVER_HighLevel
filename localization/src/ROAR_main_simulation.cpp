@@ -19,7 +19,7 @@ const int n_state_dim = 9;  // x_state dimension
 const float alpha = 0.3;
 const float beta_ = 2.0;
 const float kappa = 0.1;
-double dt = 1e-08;
+double dt = 0.0;
 
 bool gps_started = true;
 double lat0 = 0.0;
@@ -46,13 +46,10 @@ void imuCallback(const sensor_msgs::Imu::ConstPtr& msg)
 // Call back function to handle incoming encoder messages
 void encoderCallback(const sensor_msgs::JointState::ConstPtr& msg)
 {
-    encoder_measurement.resize(2);
+    encoder_measurement.resize(6);
     if (msg->velocity.size() != 6) return;
-    // cout << "Encoder Callback" << endl;
-    double left_wheels = (msg->velocity[0]+ msg->velocity[1]+ msg->velocity[2]) / 3;
-    double right_wheels = (msg->velocity[3] + msg->velocity[4] + msg->velocity[5]) / 3;
-    
-    encoder_measurement << right_wheels, left_wheels;
+
+    encoder_measurement << msg->velocity[0], msg->velocity[1],  msg->velocity[2], msg->velocity[3], msg->velocity[4], msg->velocity[5];
 }
 
 // Call back function to handle incoming gps messages
@@ -91,7 +88,7 @@ int main(int argc, char **argv)
     ros::Subscriber gps_sub = nh.subscribe("/gps", 1000, gpsCallback);
     ros::Subscriber mag_sub = nh.subscribe("/magnetometer", 1000, magCallback);
 
-    encoder_measurement = Eigen::Vector2d::Zero(2);
+    encoder_measurement = Eigen::VectorXd::Zero(6);
     z_measurement = Eigen::VectorXd::Zero(11);
     acc_measurement = Eigen::Vector3d::Zero(3);
     gyro_measurement = Eigen::Vector3d::Zero(3);

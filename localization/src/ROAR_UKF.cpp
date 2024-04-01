@@ -7,15 +7,13 @@ ROVER::ROVER()
     ROVER Default Constructor
     ***/
     // Default Constructor with default parameters
-    a1 = 0.0001205;
-    a2 = 0.0001205;
-    a3 = -0.2918;
-    a4 = 0.2918;
+    Kinematic_model_parameters = Eigen::MatrixXd::Zero(2, 6);
+    rover_speeds = Eigen::VectorXd::Zero(2);
+    
+    Kinematic_model_parameters << 0.04, 0.04, 0.04, 0.04, 0.04, 0.04,
+            -0.097, -0.097, -0.097, 0.097, 0.097, 0.097;
 
-    velocity = 0;
-    omega = 0;
-    d = 0;
-
+    d = 0.0;
 }
 void ROVER::calculate_wheel_change(Eigen::VectorXd w, double dt)
 {
@@ -30,9 +28,8 @@ void ROVER::calculate_wheel_change(Eigen::VectorXd w, double dt)
         velocity: Linear velocity of rover
         omega: Angular velocity of rover
     ***/
-    velocity = a1 * w(0) + a2 * w(1);
-    omega = a3 * w(0) + a4 * w(1);
-    d = velocity * dt;
+    rover_speeds = Kinematic_model_parameters * w;
+    d = rover_speeds(0) * dt;
 }
 ROVER::~ROVER()
 {
@@ -356,9 +353,9 @@ Eigen::VectorXd UKF::process_model(Eigen::VectorXd x, Eigen::VectorXd w, double 
 
     //position
     float yaw = atan2(2 * (x(0) * x(3) + x(1) * x(2)), (1 - 2 * (x(2) * x(2) + x(3) * x(3))));
-    x_pred_sigma(7) = x(7) + rover.velocity * cos(yaw) * dt; 
-    x_pred_sigma(8) = x(8) + rover.velocity * sin(yaw) * dt;
-
+    x_pred_sigma(7) = x(7) + rover.rover_speeds(0) * cos(yaw) * dt; 
+    x_pred_sigma(8) = x(8) + rover.rover_speeds(0) * sin(yaw) * dt;
+    
     return x_pred_sigma;
 }
 void UKF::predict_measurement(double dt, Eigen::VectorXd w, double lon0, double lat0)

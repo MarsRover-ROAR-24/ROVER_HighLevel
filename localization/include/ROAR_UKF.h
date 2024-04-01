@@ -59,14 +59,11 @@ public:
 	virtual ~ROVER();
 
 	/*** ROVER Kinematic model ***/
-	double a1;
-	double a2;
-	double a3;
-	double a4;
+	Eigen::MatrixXd Kinematic_model_parameters;
 
 	// ROVER motion
-	double velocity;
-	double omega;
+	Eigen::VectorXd rover_speeds;
+
 	double d;
 
 	// velocity model
