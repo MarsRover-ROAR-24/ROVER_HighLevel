@@ -32,15 +32,24 @@ class Turtle:
                 self.kd = 0.0
                 self.dist_ld = 3
                 # self.waypoints = [(0, 0), (0.5, 0.5), (0.5,0.75),(1, 1),(1, 1.25),(1, 1.5), (1, 2)] 
-                self.waypoints = [(0, 0), (0.5,1),(1.5, 2.5), (2.5, 4), (3.75, 5.5),  (5, 6.5), (6.5, 7), (8, 8), (9, 9)] 
-
+                # self.waypoints = [(0, 0), (0.5,1),(1.5, 2.5), (2.5, 4), (3.75, 5.5),  (5, 6.5), (6.5, 7), (8, 8), (9, 9)] 
+                self.waypoints = [(0, 0),
+                                        (0.5, 0.2), 
+                                        (1, 0.5),
+                                        (1.5, 1), 
+                                        (2, 2), 
+                                        (2,4),(4,4),(6,6),  (7, 6.5),   # Curve start
+                                        (8, 7.5),   # Curve end
+                                        (9, 8.5),
+                                        (9.5, 9)
+                                        ]
                 self.goaly= 9
                 self.goalx= 9
                 self.dt = 0.1
                 self.currentx = 0.0
                 self.currenty = 0.0
                 self.integral = 0.0
-                self.max_velocity = 1.2
+                self.max_velocity = 1.57
 
                 self.robot_theta = 0.0
                 self.width = 0.8
@@ -156,8 +165,7 @@ class Turtle:
                 # Limit the lookahead distance to a maximum value
                 lookahead_distance = min(adaptive_lookahead_distance, self.max_lookahead_distance)
 
-                return lookahead_point, lookahead_distance
-
+                return lookahead_point, lookahead_distance 
      
         def purePursuit(self):
                 lookahead_point = self.find_lookahead_point((self.currentx, self.currenty))
@@ -169,11 +177,16 @@ class Turtle:
                         dx = L * math.cos(theta)
                         Vr = self.pidController() * (1 - self.width * dx / (L * L))
                         Vl = self.pidController() * (1 + self.width * dx / (L * L))
+
+                        Vr = min(max(Vr, -1.57), 1.57)
+                        Vl = min(max(Vl, -1.57), 1.57)
+                        
                         print('Right: ', Vr, ' Left: ', Vl)
+                        
                         self.velocitylm_publisher.publish(Vl)
-                        self.velocityrm_publisher.publish(-Vr)
+                        self.velocityrm_publisher.publish(Vr)
                         self.velocitylf_publisher.publish(Vl)
-                        self.velocityrf_publisher.publish(-Vr)
+                        self.velocityrf_publisher.publish(Vr)
                         self.velocitylr_publisher.publish(Vl)
                         self.velocityrr_publisher.publish(Vr)
 
