@@ -65,6 +65,14 @@
         <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
       </material>
     </visual>
+    <surface>
+      <friction>
+        <ode>
+          <mu>0.01</mu>
+          <mu2>0.01</mu2>
+        </ode>
+      </friction>
+    </surface>
     <collision>
       <origin xyz="0 0 0" rpy="0 0 0" />
       <geometry>
@@ -72,7 +80,7 @@
       </geometry>
     </collision>
   </link>
-  <joint name="bogie_rhs_joint" type="fixed">
+  <joint name="bogie_rhs_joint" type="continuous">
     <origin xyz="-0.224229060097619 0.165122592734234 -0.0928547999999997" rpy="0 0 -0.03" />
     <parent link="rocker_rhs" />
     <child link="bogie_rhs" />
@@ -205,6 +213,14 @@
         <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
       </material>
     </visual>
+    <surface>
+      <friction>
+        <ode>
+          <mu>0.01</mu>
+          <mu2>0.01</mu2>
+        </ode>
+      </friction>
+    </surface>
     <collision>
       <origin xyz="0 0 0" rpy="0 0 0" />
       <geometry>
@@ -212,7 +228,7 @@
       </geometry>
     </collision>
   </link>
-  <joint name="bogie_lhs_joint" type="fixed">
+  <joint name="bogie_lhs_joint" type="continuous">
     <origin xyz="-0.224947261786088 -0.16672950973041 0.00464519999999913" rpy="0 0 0" />
     <parent link="rocker_lhs" />
     <child link="bogie_lhs" />
@@ -377,7 +393,7 @@
       <topicName>imu</topicName>
       <serviceName>imu_service</serviceName>
       <gaussianNoise>0.0</gaussianNoise>
-      <updateRate>20.0</updateRate>
+      <updateRate>60.0</updateRate>
     </plugin>
   </gazebo>
 
@@ -385,7 +401,7 @@
   <gazebo>
     <plugin name="novatel_gps_sim" filename="libhector_gazebo_ros_gps.so">
       <alwaysOn>1</alwaysOn>
-      <updateRate>20.0</updateRate>
+      <updateRate>60.0</updateRate>
       <bodyName>base_link</bodyName>
       <topicName>gps</topicName>
       <velocityTopicName>fix_velocity</velocityTopicName>
@@ -398,7 +414,7 @@
 
   <gazebo>
     <plugin name="magnetometer" filename="libhector_gazebo_ros_magnetic.so">
-      <updateRate>20.0</updateRate>
+      <updateRate>60.0</updateRate>
       <bodyname>base_link</bodyname>
       <topicName>magnetometer</topicName>
       <referenceHeading>0.0</referenceHeading>

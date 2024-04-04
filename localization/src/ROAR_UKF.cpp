@@ -234,6 +234,8 @@ UKF::UKF(MerwedSigmaPoints merwed_sigma_points)
         0.0,
         B_INTENSITY* sin(INCLINATION);
 
+    yaw = 0.0;
+
 }
 /*** Destructor ***/
 UKF::~UKF()
@@ -352,10 +354,12 @@ Eigen::VectorXd UKF::process_model(Eigen::VectorXd x, Eigen::VectorXd w, double 
     x_pred_sigma(6) = x(6);
 
     //position
-    float yaw = atan2(2 * (x(0) * x(3) + x(1) * x(2)), (1 - 2 * (x(2) * x(2) + x(3) * x(3))));
+    // float yaw = atan2(2 * (x(0) * x(3) + x(1) * x(2)), (1 - 2 * (x(2) * x(2) + x(3) * x(3))));
+    yaw = yaw + rover.rover_speeds(1) * dt;
+    // cout << "yaw: " << yaw << endl;
     x_pred_sigma(7) = x(7) + rover.rover_speeds(0) * cos(yaw) * dt; 
     x_pred_sigma(8) = x(8) + rover.rover_speeds(0) * sin(yaw) * dt;
-    
+
     return x_pred_sigma;
 }
 void UKF::predict_measurement(double dt, Eigen::VectorXd w, double lon0, double lat0)

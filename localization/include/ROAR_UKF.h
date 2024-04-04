@@ -112,6 +112,8 @@ public:
 	Eigen::Vector3d g0;
 	Eigen::Vector3d m0;
 
+	double yaw;
+
 	/*** Constructors ***/
 	UKF();
 	UKF(MerwedSigmaPoints merwed_sigma_points);
