@@ -34,7 +34,6 @@ private:
     ros::Publisher pub;
 
     localization::buffer buffered_measurements;
-
     void imuCallback(const sensor_msgs::Imu::ConstPtr& msg)
     {
         buffered_measurements.measurements[0] = msg->angular_velocity.x;
@@ -45,7 +44,7 @@ private:
         buffered_measurements.measurements[4] = msg->linear_acceleration.y;
         buffered_measurements.measurements[5] = msg->linear_acceleration.z;
     }
-
+    
     void encoderCallback(const sensor_msgs::JointState::ConstPtr& msg)
     {
         if (msg->velocity.size() != 6) return;
@@ -67,7 +66,6 @@ private:
         buffered_measurements.measurements[9] = msg->latitude;
         buffered_measurements.measurements[10] = msg->longitude;
     }
-
 };
 
 int main(int argc, char **argv) 

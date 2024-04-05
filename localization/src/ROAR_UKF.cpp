@@ -340,7 +340,6 @@ Eigen::VectorXd UKF::process_model(Eigen::VectorXd x, Eigen::VectorXd w, double 
     attitude = attitude * uq_omega;
 
     Eigen::VectorXd x_pred_sigma(9);
-    x_pred_sigma << 1, 0, 0, 0, 0, 0, 0, 0, 0;
 
     // Quaternions
     x_pred_sigma(0) = attitude.s;
@@ -356,7 +355,6 @@ Eigen::VectorXd UKF::process_model(Eigen::VectorXd x, Eigen::VectorXd w, double 
     //position
     // float yaw = atan2(2 * (x(0) * x(3) + x(1) * x(2)), (1 - 2 * (x(2) * x(2) + x(3) * x(3))));
     yaw = yaw + rover.rover_speeds(1) * dt;
-    // cout << "yaw: " << yaw << endl;
     x_pred_sigma(7) = x(7) + rover.rover_speeds(0) * cos(yaw) * dt; 
     x_pred_sigma(8) = x(8) + rover.rover_speeds(0) * sin(yaw) * dt;
 
