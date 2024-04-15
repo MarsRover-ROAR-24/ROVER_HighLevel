@@ -41,8 +41,9 @@ class Turtle:
                                         (2,4),(4,4),(6,6),  (7, 6.5),   # Curve start
                                         (8, 7.5),   # Curve end
                                         (9, 8.5),
-                                        (9.5, 9)
+                                        (9, 9)
                                         ]
+                self.waypoints.reverse()
                 self.goaly= 9
                 self.goalx= 9
                 self.dt = 0.1
@@ -57,12 +58,35 @@ class Turtle:
                 self.error_values = []
 
                 # Setup matplotlib for plotting
-                plt.ion()  # Turn on interactive mode
-                self.fig, self.ax = plt.subplots()
-                self.ax.set_xlabel('Time')
-                self.ax.set_ylabel('Error')
-                self.line, = self.ax.plot([], [], label='Error vs. Time')
-                self.ax.legend()
+                self.fig, (self.ax1, self.ax2) = plt.subplots(1, 2, figsize=(12, 6))
+
+                # Plot for waypoints
+                self.ax1.set_xlabel('X')
+                self.ax1.set_ylabel('Y')
+                self.ax1.set_title('Waypoints')
+                self.waypoints_x, self.waypoints_y = zip(*self.waypoints)
+                self.ax1.plot(self.waypoints_x, self.waypoints_y, 'b--', label='Waypoints')
+                
+                # # Plot for waypoints2 with a different color
+                # self.waypoints2_x, self.waypoints2_y = zip(*self.waypoints2)
+                # self.ax1.plot(self.waypoints2_x, self.waypoints2_y, 'r--', label='Waypoints2')               
+                # self.ax1.legend()
+
+                # Plot for error vs. time
+                self.ax2.set_xlabel('Time')
+                self.ax2.set_ylabel('Error')
+                self.line, = self.ax2.plot([], [], label='Error vs. Time')
+                self.ax2.legend()
+
+                plt.tight_layout()
+
+                # # Setup matplotlib for plotting
+                # plt.ion()  # Turn on interactive mode
+                # self.fig, self.ax = plt.subplots()
+                # self.ax.set_xlabel('Time')
+                # self.ax.set_ylabel('Error')
+                # self.line, = self.ax.plot([], [], label='Error vs. Time')
+                # self.ax.legend()
 
         def update_pose(self, data:ModelStates):
                 self.pose = data
@@ -194,8 +218,6 @@ if __name__ == '__main__':
     try:
         x = Turtle()
         while not rospy.is_shutdown():
-        #     x.purePursuit()
-        #        time.sleep(2)
                x.purePursuit()
     except rospy.ROSInterruptException:
         pass

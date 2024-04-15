@@ -3,31 +3,28 @@ import numpy as np
 
 # Manually inserted waypoints resembling a track with larger curves
 waypoints = [
-    (0, 0),
-    (0.5, 0.2), 
-    (1, 0.5),
-    (1.5, 1), 
-    (2, 2), 
-    (2,4),(4,4),(6,6), 
-    # (3, 2.5),
-    # (3.5, 3), 
-    # (4, 3.5), 
-    # (4.5, 4), 
-    # (5, 4.5),   # Curve start
-    # (6, 5.5),   # Curve end
-    (7, 6.5),   # Curve start
-    (8, 7.5),   # Curve end
-    (9, 8.5),
-    (9.5, 9)
-]
-
+            (0, 0),
+            (0.5, 1),
+            (1, 1.5),
+            (1.5, 1.8),
+            (2, 2),
+            (2, 4),
+            (4, 4),
+            (6, 6),
+            (7, 6.5),  # Curve start
+            (8, 7.5),  # Curve end
+            (9, 8.5),
+            (9, 9)
+        ]
+waypoints.reverse()
+print(waypoints)
 # Extract x and y coordinates of waypoints
 x_coords = [point[0] for point in waypoints]
 y_coords = [point[1] for point in waypoints]
 
 # Plot waypoints
 plt.figure(figsize=(10, 8))
-plt.plot(x_coords, y_coords, 'bo-', label='Waypoints')
+plt.plot(x_coords, y_coords, 'r', label='Waypoints')
 
 plt.xlabel('X')
 plt.ylabel('Y')
