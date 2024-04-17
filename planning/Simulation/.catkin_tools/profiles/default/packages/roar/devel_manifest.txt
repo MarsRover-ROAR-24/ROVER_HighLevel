@@ -1,0 +1,5 @@
+roar
+/home/alaa/Simulation/devel/.private/roar/cmake.lock /home/alaa/Simulation/devel/./cmake.lock
+/home/alaa/Simulation/devel/.private/roar/share/roar/cmake/roarConfig.cmake /home/alaa/Simulation/devel/share/roar/cmake/roarConfig.cmake
+/home/alaa/Simulation/devel/.private/roar/share/roar/cmake/roarConfig-version.cmake /home/alaa/Simulation/devel/share/roar/cmake/roarConfig-version.cmake
+/home/alaa/Simulation/devel/.private/roar/lib/pkgconfig/roar.pc /home/alaa/Simulation/devel/lib/pkgconfig/roar.pc

@@ -9,6 +9,7 @@ from tf.transformations import euler_from_quaternion
 import time
 import numpy as np
 import matplotlib.pyplot as plt
+from turtlebot3_msgs.msg import wp_list
 
 class Turtle:
 
@@ -23,6 +24,8 @@ class Turtle:
         self.velocityrm_publisher = rospy.Publisher('/wheel_rhs_mid_velocity_controller/command', Float64, queue_size=10)
         self.pose_subscriber = rospy.Subscriber('/gazebo/model_states', ModelStates, self.update_pose)
 
+        self.path_subscriber = rospy.Subscriber('tuple_list_topic', wp_list, self.tuple_list_callback)  #===>
+
         self.pose = ModelStates()
         self.throttle_output=Float64()
 
@@ -30,192 +33,8 @@ class Turtle:
         self.kp = 0.5
         self.ki = 0.5
         self.kd = 0.0
-        self.dist_ld = 0.7
-        # self.waypoints = [(1.5, 2), 
-        #                   (3, 4),
-        #                   (4, 6), 
-        #                   (6, 7), 
-        #                   (8, 7.5),   # Curve end
-        #                   (9, 8.5),
-        #                   (9, 9)
-        #                   ]
-        self.waypoints = [
-            (0, 0),
-            (0.1, 0.05),
-            (0.2, 0.1),
-            (0.3, 0.15),
-            (0.4, 0.2),
-            (0.5, 0.25),
-            (0.5, 1),
-            (0.6, 1.2),
-            (0.7, 1.4),
-            (0.8, 1.6),
-            (0.9, 1.8),
-            (1, 2),
-            (1.05, 2.05),
-            (1.1, 2.1),
-            (1.15, 2.15),
-            (1.2, 2.2),
-            (1.25, 2.25),
-            (1.3, 2.3),
-            (1.35, 2.35),
-            (1.4, 2.4),
-            (1.45, 2.45),
-            (1.5, 2.5),
-            (1.55, 2.55),
-            (1.6, 2.6),
-            (1.65, 2.65),
-            (1.7, 2.7),
-            (1.75, 2.75),
-            (1.8, 2.8),
-            (1.85, 2.85),
-            (1.9, 2.9),
-            (1.95, 2.95),
-            (2, 3),
-            (2.05, 3.05),
-            (2.1, 3.1),
-            (2.15, 3.15),
-            (2.2, 3.2),
-            (2.25, 3.25),
-            (2.3, 3.3),
-            (2.35, 3.35),
-            (2.4, 3.4),
-            (2.45, 3.45),
-            (2.5, 3.5),
-            (2.55, 3.55),
-            (2.6, 3.6),
-            (2.65, 3.65),
-            (2.7, 3.7),
-            (2.75, 3.75),
-            (2.8, 3.8),
-            (2.85, 3.85),
-            (2.9, 3.9),
-            (2.95, 3.95),
-            (3, 4),
-            (3.05, 4.05),
-            (3.1, 4.1),
-            (3.15, 4.15),
-            (3.2, 4.2),
-            (3.25, 4.25),
-            (3.3, 4.3),
-            (3.35, 4.35),
-            (3.4, 4.4),
-            (3.45, 4.45),
-            (3.5, 4.5),
-            (3.55, 4.55),
-            (3.6, 4.6),
-            (3.65, 4.65),
-            (3.7, 4.7),
-            (3.75, 4.75),
-            (3.8, 4.8),
-            (3.85, 4.85),
-            (3.9, 4.9),
-            (3.95, 4.95),
-            (4, 5),
-            (4.05, 5.05),
-            (4.1, 5.1),
-            (4.15, 5.15),
-            (4.2, 5.2),
-            (4.25, 5.25),
-            (4.3, 5.3),
-            (4.35, 5.35),
-            (4.4, 5.4),
-            (4.45, 5.45),
-            (4.5, 5.5),
-            (4.55, 5.55),
-            (4.6, 5.6),
-            (4.65, 5.65),
-            (4.7, 5.7),
-            (4.75, 5.75),
-            (4.8, 5.8),
-            (4.85, 5.85),
-            (4.9, 5.9),
-            (4.95, 5.95),
-            (5, 6),
-            (5.05, 6.05),
-            (5.1, 6.1),
-            (5.15, 6.15),
-            (5.2, 6.2),
-            (5.25, 6.25),
-            (5.3, 6.3),
-            (5.35, 6.35),
-            (5.4, 6.4),
-            (5.45, 6.45),
-            (5.5, 6.5),
-            (5.55, 6.55),
-            (5.6, 6.6),
-            (5.65, 6.65),
-            (5.7, 6.7),
-            (5.75, 6.75),
-            (5.8, 6.8),
-            (5.85, 6.85),
-            (5.9, 6.9),
-            (5.95, 6.95),
-            (6, 7),
-            (6.05, 7.05),
-            (6.1, 7.1),
-            (6.15, 7.15),
-            (6.2, 7.2),
-            (6.25, 7.25),
-            (6.3, 7.3),
-            (6.35, 7.35),
-            (6.4, 7.4),
-            (6.45, 7.45),
-            (6.5, 7.5),
-            (6.55, 7.55),
-            (6.6, 7.6),
-            (6.65, 7.65),
-            (6.7, 7.7),
-            (6.75, 7.75),
-            (6.8, 7.8),
-            (6.85, 7.85),
-            (6.9, 7.9),
-            (6.95, 7.95),
-            (7, 8),
-            (7.05, 8.05),
-            (7.1, 8.1),
-            (7.15, 8.15),
-            (7.2, 8.2),
-            (7.25, 8.25),
-            (7.3, 8.3),
-            (7.35, 8.35),
-            (7.4, 8.4),
-            (7.45, 8.45),
-            (7.5, 8.5),
-            (7.55, 8.55),
-            (7.6, 8.6),
-            (7.65, 8.65),
-            (7.7, 8.7),
-            (7.75, 8.75),
-            (7.8, 8.8),
-            (7.85, 8.85),
-            (7.9, 8.9),
-            (7.95, 8.95),
-            (8, 9),
-            (8.05, 9.05),
-            (8.1, 9.1),
-            (8.15, 9.15),
-            (8.2, 9.2),
-            (8.25, 9.25),
-            (8.3, 9.3),
-            (8.35, 9.35),
-            (8.4, 9.4),
-            (8.45, 9.45),
-            (8.5, 9.5),
-            (8.55, 9.55),
-            (8.6, 9.6),
-            (8.65, 9.65),
-            (8.7, 9.7),
-            (8.75, 9.75),
-            (8.8, 9.8),
-            (8.85, 9.85),
-            (8.9, 9.9),
-            (8.95, 9.95),
-            (9, 9)
-        ]
+        self.dist_ld = 0.5
 
-        self.goaly= 9
-        self.goalx= 9
         self.dt = 0.1
         self.currentx = 0.0
         self.currenty = 0.0
@@ -227,6 +46,10 @@ class Turtle:
         self.time_values = []
         self.error_values = []
 
+        self.waypoints = []
+        self.x_goal_point = 0.0
+        self.y_goal_point = 0.0
+
         # Setup matplotlib for plotting
         self.fig, (self.ax1, self.ax2) = plt.subplots(1, 2, figsize=(12, 6))
 
@@ -234,13 +57,9 @@ class Turtle:
         self.ax1.set_xlabel('X')
         self.ax1.set_ylabel('Y')
         self.ax1.set_title('Waypoints')
-        self.waypoints_x, self.waypoints_y = zip(*self.waypoints)
-        self.ax1.plot(self.waypoints_x, self.waypoints_y, 'b--', label='Waypoints')
-
-        # # Plot for waypoints2 with a different color
-        # self.waypoints2_x, self.waypoints2_y = zip(*self.waypoints2)
-        # self.ax1.plot(self.waypoints2_x, self.waypoints2_y, 'r--', label='Waypoints2')
-
+        self.waypoints_x = []
+        self.waypoints_y = []
+        self.waypoints_plot, = self.ax1.plot([], [], 'b--', label='Waypoints')
         self.ax1.legend()
 
         # Plot for error vs. time
@@ -251,10 +70,16 @@ class Turtle:
 
         plt.tight_layout()
 
+    def tuple_list_callback(self, msg):
+        self.waypoints = [(msg.a[i], msg.b[i]) for i in range(msg.length)]
+        self.x_goal_point = msg.a[0]
+        self.y_goal_point = msg.b[0]
+        self.update_waypoints_plot()
+
     def update_pose(self, data:ModelStates):
         self.pose = data
-        self.currentx= self.pose.pose[1].position.x 
-        self.currenty= self.pose.pose[1].position.y
+        self.currentx = self.pose.pose[1].position.x 
+        self.currenty = self.pose.pose[1].position.y
         orientation = self.pose.pose[1].orientation
         orientation_list = [orientation.x, orientation.y, orientation.z, orientation.w]
         _, _, yaw = euler_from_quaternion(orientation_list)
@@ -268,7 +93,7 @@ class Turtle:
             print("Selected Lookahead Point:", lookahead_point)
         else:
             # If no lookahead point found, set the error to the distance between the current position and the goal
-            e = math.hypot(self.goalx - self.currentx, self.goaly - self.currenty)
+            e = math.hypot(self.x_goal_point - self.currentx, self.y_goal_point - self.currenty)
 
         e_past = 0
 
@@ -312,7 +137,7 @@ class Turtle:
             return None  # No valid lookahead point found
 
         # Calculate distances from candidate lookahead points to the goal
-        distances_to_goal = [np.linalg.norm(np.array(waypoint) - np.array((self.goalx, self.goaly))) for waypoint in candidate_lookahead_points]
+        distances_to_goal = [np.linalg.norm(np.array(waypoint) - np.array((self.x_goal_point, self.y_goal_point))) for waypoint in candidate_lookahead_points]
 
         # Find the index of the candidate with the minimum distance to the goal
         min_distance_index = np.argmin(distances_to_goal)
@@ -344,20 +169,24 @@ class Turtle:
             self.velocityrf_publisher.publish(Vr)
             self.velocitylr_publisher.publish(Vl)
             self.velocityrr_publisher.publish(Vr)
-
+            
             # Plot rover position
             self.plot_rover_position()
-
             # Give time for plot to update
             plt.pause(0.001)
 
     def plot_rover_position(self):
         self.ax1.plot(self.currentx, self.currenty, 'ro')  # Plot current position in red
 
+    def update_waypoints_plot(self):
+        self.waypoints_x, self.waypoints_y = zip(*self.waypoints)
+        self.waypoints_plot.set_data(self.waypoints_x, self.waypoints_y)
+
 if __name__ == '__main__':
     try:
         x = Turtle()
         while not rospy.is_shutdown():
-            x.purePursuit()
+            if len(x.waypoints) > 0:
+                x.purePursuit()
     except rospy.ROSInterruptException:
         pass

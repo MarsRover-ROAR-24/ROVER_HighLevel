@@ -11,6 +11,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from turtlebot3_msgs.msg import wp_list
 
+
 class Turtle:
 
         def __init__(self):
@@ -23,8 +24,8 @@ class Turtle:
                 self.velocitylm_publisher = rospy.Publisher('/wheel_lhs_mid_velocity_controller/command', Float64, queue_size=10)
                 self.velocityrm_publisher = rospy.Publisher('/wheel_rhs_mid_velocity_controller/command', Float64, queue_size=10)
                 self.pose_subscriber = rospy.Subscriber('/gazebo/model_states', ModelStates, self.update_pose)
-    
-                self.path_subscriber = rospy.Subscriber('tuple_list_topic', wp_list, self.tuple_list_callback) 
+
+                self.path_subscriber = rospy.Subscriber('tuple_list_topic', wp_list, self.tuple_list_callback)  #===>
 
                 self.pose = ModelStates()
                 self.throttle_output=Float64()
@@ -34,21 +35,8 @@ class Turtle:
                 self.ki = 0.1
                 self.kd = 0.0
                 self.dist_ld = 3
-                # self.waypoints = [(0, 0), (0.5, 0.5), (0.5,0.75),(1, 1),(1, 1.25),(1, 1.5), (1, 2)] 
-                # self.waypoints = [(0, 0), (0.5,1),(1.5, 2.5), (2.5, 4), (3.75, 5.5),  (5, 6.5), (6.5, 7), (8, 8), (9, 9)] 
-                self.waypoints = [(0, 0),
-                                        (0.5, 0.2), 
-                                        (1, 0.5),
-                                        (1.5, 1), 
-                                        (2, 2), 
-                                        (2,4),(4,4),(6,6),  (7, 6.5),   # Curve start
-                                        (8, 7.5),   # Curve end
-                                        (9, 8.5),
-                                        (9, 9)
-                                        ]
-                self.waypoints.reverse()
-                self.goaly= 9
-                self.goalx= 9
+               
+               
                 self.dt = 0.1
                 self.currentx = 0.0
                 self.currenty = 0.0
@@ -59,37 +47,35 @@ class Turtle:
                 self.width = 0.8
                 self.time_values = []
                 self.error_values = []
+                self.waypoints = []
+
+                self.x_goal_point = 0.0
+                self.y_goal_point = 0.0
 
                 # Setup matplotlib for plotting
-                self.fig, (self.ax1, self.ax2) = plt.subplots(1, 2, figsize=(12, 6))
 
-                # Plot for waypoints
-                self.ax1.set_xlabel('X')
-                self.ax1.set_ylabel('Y')
-                self.ax1.set_title('Waypoints')
-                self.waypoints_x, self.waypoints_y = zip(*self.waypoints)
-                self.ax1.plot(self.waypoints_x, self.waypoints_y, 'b--', label='Waypoints')
-                
-                # # Plot for waypoints2 with a different color
-                # self.waypoints2_x, self.waypoints2_y = zip(*self.waypoints2)
-                # self.ax1.plot(self.waypoints2_x, self.waypoints2_y, 'r--', label='Waypoints2')               
-                # self.ax1.legend()
+                plt.ion()  # Turn on interactive mode
+                self.fig, self.ax = plt.subplots()
+                self.ax.set_xlabel('Time')
+                self.ax.set_ylabel('Error')
+                self.line, = self.ax.plot([], [], label='Error vs. Time')
+                self.ax.legend()
 
-                # Plot for error vs. time
-                self.ax2.set_xlabel('Time')
-                self.ax2.set_ylabel('Error')
-                self.line, = self.ax2.plot([], [], label='Error vs. Time')
-                self.ax2.legend()
+        def tuple_list_callback(self, msg):
+                received_tuples = []
 
-                plt.tight_layout()
+                # rospy.loginfo("Received a list of tuples:")
 
-                # # Setup matplotlib for plotting
-                # plt.ion()  # Turn on interactive mode
-                # self.fig, self.ax = plt.subplots()
-                # self.ax.set_xlabel('Time')
-                # self.ax.set_ylabel('Error')
-                # self.line, = self.ax.plot([], [], label='Error vs. Time')
-                # self.ax.legend()
+                for i in range(msg.length):
+                        tuple_data = (msg.a[i], msg.b[i])
+                        received_tuples.append(tuple_data)#--> added to be shown in the terminal
+                        self.waypoints.append(tuple_data)#--> added to be used in the code
+                # self.waypoints.reverse()
+                # rospy.loginfo(self.waypoints)
+                self.x_goal_point = msg.a[0]
+                self.y_goal_point = msg.b[0]
+        
+
 
         def update_pose(self, data:ModelStates):
                 self.pose = data
@@ -109,7 +95,7 @@ class Turtle:
                         print("Selected Lookahead Point:", lookahead_point)
                 else:
                         # If no lookahead point found, set the error to the distance between the current position and the goal
-                        e = math.hypot(self.goalx - self.currentx, self.goaly - self.currenty)
+                        e = math.hypot(self.x_goal_point - self.currentx, self.y_goal_point - self.currenty) #--> changed to goalpointx,y
                         
                 e_past = 0
                 
@@ -145,7 +131,7 @@ class Turtle:
 
                 candidate_lookahead_points = []
 
-                for waypoint in self.waypoints:
+                for waypoint in self.waypoints: 
                         distance_to_robot = np.linalg.norm(np.array(waypoint) - np.array(robot_position))
                         
                         if distance_to_robot < self.dist_ld:
@@ -155,13 +141,14 @@ class Turtle:
                         return None  # No valid lookahead point found
 
                 # Calculate distances from candidate lookahead points to the goal
-                distances_to_goal = [np.linalg.norm(np.array(waypoint) - np.array((self.goalx, self.goaly))) for waypoint in candidate_lookahead_points]
+                distances_to_goal = [np.linalg.norm(np.array(waypoint) - np.array((self.x_goal_point, self.y_goal_point))) for waypoint in candidate_lookahead_points]
 
                 # Find the index of the candidate with the minimum distance to the goal
                 min_distance_index = np.argmin(distances_to_goal)
 
                 # Select the lookahead point with the minimum distance to the goal
                 lookahead_point = candidate_lookahead_points[min_distance_index]
+                rospy.loginfo(f"lookahed choosen point is: {waypoint}")
 
                 return lookahead_point
         
@@ -221,7 +208,10 @@ if __name__ == '__main__':
     try:
         x = Turtle()
         while not rospy.is_shutdown():
-               x.purePursuit()
+        #     x.purePursuit()
+        #        time.sleep(2)
+                if len(x.waypoints) > 0:
+                        x.purePursuit()
     except rospy.ROSInterruptException:
         pass
     

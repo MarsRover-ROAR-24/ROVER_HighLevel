@@ -11,6 +11,18 @@ import numpy as np
 import matplotlib.pyplot as plt
 from turtlebot3_msgs.msg import wp_list
 
+# File path
+file_path = "/home/shams/turtlebot_ws/src/global_path_planning/scripts/data.txt"
+
+# Reading list from the file
+read_list = []
+
+with open(file_path, 'r') as file:
+    for line in file:
+        read_list.append(float(line.strip()))
+# k_linear = 0.8
+# k_angular = 0.4
+
 class Turtle:
 
         def __init__(self):
@@ -23,8 +35,6 @@ class Turtle:
                 self.velocitylm_publisher = rospy.Publisher('/wheel_lhs_mid_velocity_controller/command', Float64, queue_size=10)
                 self.velocityrm_publisher = rospy.Publisher('/wheel_rhs_mid_velocity_controller/command', Float64, queue_size=10)
                 self.pose_subscriber = rospy.Subscriber('/gazebo/model_states', ModelStates, self.update_pose)
-    
-                self.path_subscriber = rospy.Subscriber('tuple_list_topic', wp_list, self.tuple_list_callback) 
 
                 self.pose = ModelStates()
                 self.throttle_output=Float64()
@@ -33,63 +43,28 @@ class Turtle:
                 self.kp = 0.7
                 self.ki = 0.1
                 self.kd = 0.0
-                self.dist_ld = 3
-                # self.waypoints = [(0, 0), (0.5, 0.5), (0.5,0.75),(1, 1),(1, 1.25),(1, 1.5), (1, 2)] 
-                # self.waypoints = [(0, 0), (0.5,1),(1.5, 2.5), (2.5, 4), (3.75, 5.5),  (5, 6.5), (6.5, 7), (8, 8), (9, 9)] 
-                self.waypoints = [(0, 0),
-                                        (0.5, 0.2), 
-                                        (1, 0.5),
-                                        (1.5, 1), 
-                                        (2, 2), 
-                                        (2,4),(4,4),(6,6),  (7, 6.5),   # Curve start
-                                        (8, 7.5),   # Curve end
-                                        (9, 8.5),
-                                        (9, 9)
-                                        ]
-                self.waypoints.reverse()
-                self.goaly= 9
-                self.goalx= 9
+                self.dist_ld = 1
+                self.waypoints = [(0, 0), (0, 1), (0, 2), (0, 3)] 
+                self.goaly= read_list[1]
+                self.goalx= read_list[0]
                 self.dt = 0.1
                 self.currentx = 0.0
                 self.currenty = 0.0
                 self.integral = 0.0
-                self.max_velocity = 1.57
+                self.max_velocity = 1.2
 
                 self.robot_theta = 0.0
-                self.width = 0.8
+                self.width = 1.1
                 self.time_values = []
                 self.error_values = []
 
                 # Setup matplotlib for plotting
-                self.fig, (self.ax1, self.ax2) = plt.subplots(1, 2, figsize=(12, 6))
-
-                # Plot for waypoints
-                self.ax1.set_xlabel('X')
-                self.ax1.set_ylabel('Y')
-                self.ax1.set_title('Waypoints')
-                self.waypoints_x, self.waypoints_y = zip(*self.waypoints)
-                self.ax1.plot(self.waypoints_x, self.waypoints_y, 'b--', label='Waypoints')
-                
-                # # Plot for waypoints2 with a different color
-                # self.waypoints2_x, self.waypoints2_y = zip(*self.waypoints2)
-                # self.ax1.plot(self.waypoints2_x, self.waypoints2_y, 'r--', label='Waypoints2')               
-                # self.ax1.legend()
-
-                # Plot for error vs. time
-                self.ax2.set_xlabel('Time')
-                self.ax2.set_ylabel('Error')
-                self.line, = self.ax2.plot([], [], label='Error vs. Time')
-                self.ax2.legend()
-
-                plt.tight_layout()
-
-                # # Setup matplotlib for plotting
-                # plt.ion()  # Turn on interactive mode
-                # self.fig, self.ax = plt.subplots()
-                # self.ax.set_xlabel('Time')
-                # self.ax.set_ylabel('Error')
-                # self.line, = self.ax.plot([], [], label='Error vs. Time')
-                # self.ax.legend()
+                plt.ion()  # Turn on interactive mode
+                self.fig, self.ax = plt.subplots()
+                self.ax.set_xlabel('Time')
+                self.ax.set_ylabel('Error')
+                self.line, = self.ax.plot([], [], label='Error vs. Time')
+                self.ax.legend()
 
         def update_pose(self, data:ModelStates):
                 self.pose = data
@@ -100,29 +75,21 @@ class Turtle:
                 _, _, yaw = euler_from_quaternion(orientation_list)
                 self.robot_theta = yaw
 
-
         def pidController(self):
-                lookahead_point = self.find_lookahead_point((self.currentx, self.currenty))
-
-                if lookahead_point is not None:
-                        e = math.hypot(lookahead_point[0] - self.currentx, lookahead_point[1] - self.currenty)
-                        print("Selected Lookahead Point:", lookahead_point)
-                else:
-                        # If no lookahead point found, set the error to the distance between the current position and the goal
-                        e = math.hypot(self.goalx - self.currentx, self.goaly - self.currenty)
-                        
-                e_past = 0
-                
+                e = abs(math.sqrt(((self.goalx-self.currentx)**2) + ((self.goaly - self.currenty)**2)))
+               
+                e_past=0
+              
                 if e > 0.1:
                         self.integral += e * self.dt
-                        derivative = (e - e_past) / self.dt
-                        action = self.kp * e + self.ki * self.integral + self.kd * derivative
+                        derivative = (e-e_past) / self.dt
+                        action = self.kp * e +  self.ki *self.integral + self.kd * derivative
                         self.throttle_output = self.max_velocity * math.tanh(action)
-                        e_past = e
+                        e_past=e
                         print('Error = ', e)
                 else:
-                        self.throttle_output = 0.0
-                        
+                       self.throttle_output = 0.0
+                       
                 # Append time and error values for plotting
                 self.time_values.append(rospy.get_time())
                 self.error_values.append(e)
@@ -137,11 +104,21 @@ class Turtle:
                 self.ax.autoscale_view()
                 self.fig.canvas.draw()
                 self.fig.canvas.flush_events()
-
-                return self.throttle_output
-
-
+   
+                return self.throttle_output 
+                
         def find_lookahead_point(self, robot_position):
+
+                lookahead_point = None
+
+                for waypoint in self.waypoints:
+                        distance = np.linalg.norm(np.array(waypoint) - np.array(robot_position))
+                        if distance < self.dist_ld:
+                                lookahead_point = waypoint
+
+                return lookahead_point
+
+       # def find_lookahead_point(self, robot_position):
 
                 candidate_lookahead_points = []
 
@@ -192,35 +169,38 @@ class Turtle:
                 # Limit the lookahead distance to a maximum value
                 lookahead_distance = min(adaptive_lookahead_distance, self.max_lookahead_distance)
 
-                return lookahead_point, lookahead_distance 
+                return lookahead_point, lookahead_distance
+
      
+           
         def purePursuit(self):
-                lookahead_point = self.find_lookahead_point((self.currentx, self.currenty))
+                # lookahead_point = self.find_lookahead_point()
 
-                if lookahead_point is not None:
-                        alpha = math.atan2((lookahead_point[1] - self.currenty), (lookahead_point[0] - self.currentx))
-                        L = math.hypot(lookahead_point[0] - self.currentx, lookahead_point[1] - self.currenty)
-                        theta = alpha - self.robot_theta
-                        dx = L * math.cos(theta)
-                        Vr = self.pidController() * (1 - self.width * dx / (L * L))
-                        Vl = self.pidController() * (1 + self.width * dx / (L * L))
-
-                        Vr = min(max(Vr, -1.57), 1.57)
-                        Vl = min(max(Vl, -1.57), 1.57)
-                        
-                        print('Right: ', Vr, ' Left: ', Vl)
-                        
-                        self.velocitylm_publisher.publish(Vl)
-                        self.velocityrm_publisher.publish(Vr)
-                        self.velocitylf_publisher.publish(Vl)
-                        self.velocityrf_publisher.publish(Vr)
-                        self.velocitylr_publisher.publish(Vl)
-                        self.velocityrr_publisher.publish(Vr)
+                # if lookahead_point is not None:
+                        # dx = lookahead_point[0] - self.pose.pose[1].position.x
+                        # dy = lookahead_point[1] - self.pose.pose[1].position.y
+                #        alpha = math.atan2((lookahead_point[1] - self.pose.pose[1].position.y)/(lookahead_point[0] - self.pose.pose[1].position.x))
+                #        L= (lookahead_point[0] - self.pose.pose[1].position.x)/math.cos(alpha)
+                       alpha = math.atan2((self.goaly - self.currenty),(self.goalx - self.currentx))
+                       L= (self.goalx - self.currentx)/math.cos(alpha)
+                       theta= alpha - self.robot_theta
+                       dx = L * math.cos(theta) 
+                       Vr= self.pidController() * (1 - self.width * dx/(L * L))
+                       Vl= self.pidController() * (1 + self.width * dx/(L * L))
+                       print('Right: ', Vr, ' Left: ', Vl)
+                       self.velocitylm_publisher.publish(Vl)   
+                       self.velocityrm_publisher.publish(-Vr)   
+                       self.velocitylf_publisher.publish(Vl)   
+                       self.velocityrf_publisher.publish(-Vr)   
+                       self.velocitylr_publisher.publish(Vl)   
+                       self.velocityrr_publisher.publish(Vr)    
 
 if __name__ == '__main__':
     try:
         x = Turtle()
         while not rospy.is_shutdown():
+        #     x.purePursuit()
+        #        time.sleep(2)
                x.purePursuit()
     except rospy.ROSInterruptException:
         pass
