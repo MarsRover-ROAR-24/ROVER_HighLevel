@@ -64,8 +64,6 @@ public:
 	// ROVER motion
 	Eigen::VectorXd rover_speeds;
 
-	double d;
-
 	// velocity model
 	void calculate_wheel_change(Eigen::VectorXd w, double dt);
 };

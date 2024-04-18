@@ -34,6 +34,7 @@ void sensorsCallback(const localization::buffer::ConstPtr& msg)
     }
     ros::Time current_time_stamp = msg->header.stamp;
     dt = (current_time_stamp - prev_time_stamp).toSec();
+    cout << "dt: " << dt << endl;
 
     prev_time_stamp = current_time_stamp;
 
@@ -47,13 +48,6 @@ void sensorsCallback(const localization::buffer::ConstPtr& msg)
     }
     new_measurement_received = true;
 }
-
-// void timerCallback(const ros::TimerEvent& event)
-// {
-
-
- 
-// }
 
 int main(int argc, char **argv) 
 {

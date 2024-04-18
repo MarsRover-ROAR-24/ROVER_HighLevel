@@ -23,6 +23,7 @@ public:
     {
         buffered_measurements.header.stamp = ros::Time::now();
         pub.publish(buffered_measurements);
+        std::cout << "Published sensor data: " << std::endl << buffered_measurements << std::endl;
     }
 
 private:

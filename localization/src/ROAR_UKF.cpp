@@ -11,9 +11,8 @@ ROVER::ROVER()
     rover_speeds = Eigen::VectorXd::Zero(2);
     
     Kinematic_model_parameters << 0.04, 0.04, 0.04, 0.04, 0.04, 0.04,
-            -0.097, -0.097, -0.097, 0.097, 0.097, 0.097;
+                                 -0.097, -0.097, -0.097, 0.097, 0.097, 0.097;
 
-    d = 0.0;
 }
 void ROVER::calculate_wheel_change(Eigen::VectorXd w, double dt)
 {
@@ -29,7 +28,6 @@ void ROVER::calculate_wheel_change(Eigen::VectorXd w, double dt)
         omega: Angular velocity of rover
     ***/
     rover_speeds = Kinematic_model_parameters * w;
-    d = rover_speeds(0) * dt;
 }
 ROVER::~ROVER()
 {
@@ -354,10 +352,21 @@ Eigen::VectorXd UKF::process_model(Eigen::VectorXd x, Eigen::VectorXd w, double 
 
     //position
     // float yaw = atan2(2 * (x(0) * x(3) + x(1) * x(2)), (1 - 2 * (x(2) * x(2) + x(3) * x(3))));
-    yaw = yaw + rover.rover_speeds(1) * dt;
-    x_pred_sigma(7) = x(7) + rover.rover_speeds(0) * cos(yaw) * dt; 
-    x_pred_sigma(8) = x(8) + rover.rover_speeds(0) * sin(yaw) * dt;
+    // Update position based on linear and angular velocities
+    yaw += round(rover.rover_speeds(1) * dt*100)/100; // Update orientation
+    cout << "yaw: " << yaw << endl;
 
+    // Update x and y positions
+    double linear_velocity = round(rover.rover_speeds(0)*100)/100;
+    double angular_velocity = round(rover.rover_speeds(1)*100)/100;
+
+    // Calculate change in x and y positions
+    double dx = linear_velocity * cos(yaw) * dt;
+    double dy = linear_velocity * sin(yaw) * dt;
+
+    // Update x and y positions
+    x_pred_sigma(7) = x(7) + dx;
+    x_pred_sigma(8) = x(8) + dy;
     return x_pred_sigma;
 }
 void UKF::predict_measurement(double dt, Eigen::VectorXd w, double lon0, double lat0)
@@ -416,14 +425,23 @@ Eigen::VectorXd UKF::measurment_model(Eigen::VectorXd x, Eigen::VectorXd w, doub
     Eigen::VectorXd gyro_pred(3);
     gyro_pred << x(4), x(5), x(6);
 
-    float yaw = atan2(2 * (x(0) * x(3) + x(1) * x(2)), 1 - 2 * (x(2) * x(2) + x(3) * x(3)));
+    // float yaw = atan2(2 * (x(0) * x(3) + x(1) * x(2)), 1 - 2 * (x(2) * x(2) + x(3) * x(3)));
+    // yaw += round(rover.rover_speeds(1) * dt*100)/100; // Update orientation
+
 
     ROVER rover;
     rover.calculate_wheel_change(w, dt);
+    
+    // Update position based on linear and angular velocities
+    yaw += rover.rover_speeds(1) * dt; // Update orientation
 
-    double dx = rover.d * cos(yaw);
-    double dy = rover.d * sin(yaw);
+    // Update x and y positions
+    double linear_velocity = rover.rover_speeds(0);
+    double angular_velocity = rover.rover_speeds(1);
 
+    // Calculate change in x and y positions
+    double dx = linear_velocity * cos(yaw) * dt;
+    double dy = linear_velocity * sin(yaw) * dt;
     double lat = lat0 + (180 / PI) * (dy / 6378137);
     double lon = lon0 + (180 / PI) * (dx / 6378137) / cos(lat0);
 
