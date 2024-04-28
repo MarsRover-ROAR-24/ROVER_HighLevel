@@ -7,7 +7,7 @@ from localization.msg import buffer
 
 pub = rospy.Publisher("/imu_readings", buffer, queue_size=10)
 rospy.init_node("sync_test")
-r = rospy.Rate(20) #10hz
+r = rospy.Rate(10) #10hz
 buffer_msg = buffer()
 
 def sync_callback(imu_msg, mag_msg):

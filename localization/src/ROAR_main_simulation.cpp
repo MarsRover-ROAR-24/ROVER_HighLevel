@@ -6,6 +6,7 @@
 #include <geometry_msgs/Vector3Stamped.h>
 #include <sensor_msgs/Imu.h>
 #include <std_msgs/Float64MultiArray.h>
+#include "localization/buffer.h"
 
 using namespace std;
 
@@ -24,21 +25,6 @@ bool new_measurement_received = false;
 bool intial_measurment = true;
 double lat0 = 0.0;
 double lon0 = 0.0;
-
-// void sensorsCallback(const localization::buffer::ConstPtr& msg)
-// {
-//     if (prev_time_stamp.isZero()) 
-//     {
-//         prev_time_stamp = msg->header.stamp;
-//         return;
-//     }
-//     ros::Time current_time_stamp = msg->header.stamp;
-//     dt = (current_time_stamp - prev_time_stamp).toSec();
-//     cout << "dt: " << dt << endl;
-
-//     prev_time_stamp = current_time_stamp;
-
-// }
 
 void encoderCallback(const sensor_msgs::JointState::ConstPtr& msg)
 {
@@ -79,6 +65,23 @@ void gpsCallback(const sensor_msgs::NavSatFix::ConstPtr& msg)
     z_measurement[10] = msg->longitude;
     UKF::gps_callback(z_measurement, dt, lat0, lon0);
 }
+void imuCallback(const localization::buffer::ConstPtr& msg)
+{
+    if (imu_prev_time_stamp.isZero()) 
+    {
+        imu_prev_time_stamp = msg->header.stamp;
+        return;
+    }
+    ros::Time imu_current_time_stamp = msg->header.stamp;
+    dt = (imu_current_time_stamp - imu_prev_time_stamp).toSec();
+    imu_prev_time_stamp = imu_current_time_stamp;
+
+    for (int i = 0; i < 9; ++i) 
+    {
+        z_measurement[i] = msg->measurements[i];
+    }
+    UKF::imu_callback(z_measurement, dt);
+}
 
 int main(int argc, char **argv) 
 {
@@ -98,7 +101,8 @@ int main(int argc, char **argv)
 
     while (ros::ok())
     {
-        
+        cout << "x_posterior: " << ukf.x_posterior.transpose() << endl;
+        cout << "P_posterior: " << ukf.P_posterior << endl;
         ros::spinOnce();
     }
 
