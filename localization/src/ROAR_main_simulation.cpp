@@ -1,7 +1,11 @@
 #include "ROAR_UKF.h"
 #include <ros/ros.h>
-#include "localization/buffer.h"
 #include <chrono>
+#include <sensor_msgs/JointState.h>
+#include <sensor_msgs/NavSatFix.h>
+#include <geometry_msgs/Vector3Stamped.h>
+#include <sensor_msgs/Imu.h>
+#include <std_msgs/Float64MultiArray.h>
 
 using namespace std;
 
@@ -12,14 +16,49 @@ const int n_state_dim = 9;  // x_state dimension
 const float alpha = 0.3;
 const float beta_ = 2.0;
 const float kappa = 0.1;
-ros::Time prev_time_stamp;
+ros::Time encoder_prev_time_stamp;
+ros::Time imu_prev_time_stamp;
+ros::Time gps_prev_time_stamp;
 double dt = 0.0;
 bool new_measurement_received = false;
 bool intial_measurment = true;
 double lat0 = 0.0;
 double lon0 = 0.0;
 
-void sensorsCallback(const localization::buffer::ConstPtr& msg)
+// void sensorsCallback(const localization::buffer::ConstPtr& msg)
+// {
+//     if (prev_time_stamp.isZero()) 
+//     {
+//         prev_time_stamp = msg->header.stamp;
+//         return;
+//     }
+//     ros::Time current_time_stamp = msg->header.stamp;
+//     dt = (current_time_stamp - prev_time_stamp).toSec();
+//     cout << "dt: " << dt << endl;
+
+//     prev_time_stamp = current_time_stamp;
+
+// }
+
+void encoderCallback(const sensor_msgs::JointState::ConstPtr& msg)
+{
+    if (msg->velocity.size() != 6) return;
+
+    if (encoder_prev_time_stamp.isZero()) 
+    {
+        encoder_prev_time_stamp = msg->header.stamp;
+        return;
+    }
+    ros::Time encoder_current_time_stamp = msg->header.stamp;
+    dt = (encoder_current_time_stamp - encoder_prev_time_stamp).toSec();
+    encoder_prev_time_stamp = encoder_current_time_stamp;
+
+    for (int i = 0; i < 6; ++i) {
+        encoder_measurement[i] = msg->velocity[i];
+    }
+    UKF::encoder_callback(encoder_measurement, dt);
+}
+void gpsCallback(const sensor_msgs::NavSatFix::ConstPtr& msg)
 {
     if (intial_measurment == true)
     {
@@ -27,26 +66,18 @@ void sensorsCallback(const localization::buffer::ConstPtr& msg)
         lon0 = msg->measurements[10];
         intial_measurment = false;
     }
-    if (prev_time_stamp.isZero()) 
+    if (encoder_prev_time_stamp.isZero()) 
     {
-        prev_time_stamp = msg->header.stamp;
+        encoder_prev_time_stamp = msg->header.stamp;
         return;
     }
-    ros::Time current_time_stamp = msg->header.stamp;
-    dt = (current_time_stamp - prev_time_stamp).toSec();
-    cout << "dt: " << dt << endl;
+    ros::Time gps_current_time_stamp = msg->header.stamp;
+    dt = (gps_current_time_stamp - gps_prev_time_stamp).toSec();
+    gps_prev_time_stamp = gps_current_time_stamp;
 
-    prev_time_stamp = current_time_stamp;
-
-    for (int i = 0; i < 11; ++i)
-    {
-        z_measurement[i] = msg->measurements[i];
-    }
-    for (int i = 0; i < 6; ++i)
-    {
-        encoder_measurement[i] = msg->wheel_odometry[i];
-    }
-    new_measurement_received = true;
+    z_measurement[9] = msg->latitude;
+    z_measurement[10] = msg->longitude;
+    UKF::gps_callback(z_measurement, dt, lat0, lon0);
 }
 
 int main(int argc, char **argv) 
@@ -57,10 +88,9 @@ int main(int argc, char **argv)
     z_measurement = Eigen::VectorXd::Zero(11);
     encoder_measurement = Eigen::VectorXd::Zero(6);
 
-    ros::Subscriber sensor_sub = nh.subscribe("/sensors", 1000, sensorsCallback);
-
-    // Create a timer with the desired loop rate (e.g., 10 Hz)
-    // ros::Timer timer = nh.createTimer(ros::Duration(0.1), timerCallback); // 0.1 seconds = 10 Hz
+    imu_sub = nh.subscribe("/imu_readings", 1000, &SensorDataPublisher::imuCallback, this);
+    encoder_sub = nh.subscribe("/joint_states", 1000, &SensorDataPublisher::encoderCallback, this);
+    gps_sub = nh.subscribe("/gps", 1000, &SensorDataPublisher::gpsCallback, this);
 
     // Initialize Sigma Points and UKF
     MerwedSigmaPoints sigma_points(n_state_dim, alpha, beta_, kappa);
@@ -68,17 +98,6 @@ int main(int argc, char **argv)
 
     while (ros::ok())
     {
-        if (new_measurement_received)
-        {   
-            // Predict and update
-            ukf.predict_states(encoder_measurement, dt);
-            ukf.predict_measurement(dt, encoder_measurement, lat0, lon0);
-            ukf.update(z_measurement);
-            cout << "x_prior: " << endl << ukf.x_prior << endl;
-
-            // Output to Serial or any other processing  
-            new_measurement_received = false; // Reset flag
-        }
         
         ros::spinOnce();
     }

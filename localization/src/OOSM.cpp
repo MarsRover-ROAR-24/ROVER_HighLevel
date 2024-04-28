@@ -12,8 +12,6 @@ public:
     SensorDataPublisher() : nh("~")
     {
         imu_sub = nh.subscribe("/imu", 1000, &SensorDataPublisher::imuCallback, this);
-        encoder_sub = nh.subscribe("/joint_states", 1000, &SensorDataPublisher::encoderCallback, this);
-        gps_sub = nh.subscribe("/gps", 1000, &SensorDataPublisher::gpsCallback, this);
         mag_sub = nh.subscribe("/magnetometer", 1000, &SensorDataPublisher::magCallback, this);
 
         pub = nh.advertise<localization::buffer>("/sensors", 1000);

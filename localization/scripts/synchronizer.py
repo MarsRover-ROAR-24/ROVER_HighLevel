@@ -1,22 +1,38 @@
-#! /usr/bin/env python
+#!/usr/bin/env python3
 import rospy
 import message_filters
-from sensor_msgs.msg import Imu, JointState
+from sensor_msgs.msg import Imu
+from geometry_msgs.msg import Vector3Stamped
+from localization.msg import buffer
 
+pub = rospy.Publisher("/imu_readings", buffer, queue_size=10)
 rospy.init_node("sync_test")
+r = rospy.Rate(20) #10hz
+buffer_msg = buffer()
 
+def sync_callback(imu_msg, mag_msg):
+    # Create a buffer message
+    buffer_msg.header.stamp = rospy.Time.now()
+    # Assuming measurements is a list of 9 floats
+    buffer_msg.measurements = imu_msg.angular_velocity.x, imu_msg.angular_velocity.y, imu_msg.angular_velocity.z, imu_msg.linear_acceleration.x, imu_msg.linear_acceleration.y, imu_msg.linear_acceleration.z, mag_msg.vector.x, mag_msg.vector.y, mag_msg.vector.z
+    # Publish the synchronized data
+    print(buffer_msg)
+    pub.publish(buffer_msg)
 
-def sync_callback(Imu, JointState):
-    print("got a sync")
-    print(Imu.header.stamp)
-    print(JointState.header.stamp)
+while not rospy.is_shutdown():
+    # Create a publisher for synchronized data
+    
 
+    # Create subscribers for IMU and magnetometer data
+    imu_sub = message_filters.Subscriber("/imu", Imu)
+    mag_sub = message_filters.Subscriber("/magnetometer", Vector3Stamped)
 
-imu_sub = message_filters.Subscriber("imu", Imu)
-Joint_State_sub = message_filters.Subscriber("joint_states", JointState)
+    # Synchronize the messages from subscribers
+    sync = message_filters.ApproximateTimeSynchronizer(
+        [imu_sub, mag_sub], queue_size=5, slop=0.03)
 
-ots = message_filters.ApproximateTimeSynchronizer(
-    [imu_sub, Joint_State_sub], queue_size=5, slop=0.03
-)
-ots.registerCallback(sync_callback)
-rospy.spin()
+    sync.registerCallback(sync_callback)
+    rospy.loginfo(buffer_msg)
+
+    r.sleep()
+    # rospy.spin()
