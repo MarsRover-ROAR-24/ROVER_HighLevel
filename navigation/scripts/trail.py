@@ -11,11 +11,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 from turtlebot3_msgs.msg import wp_list
 
-class Turtle:
+class Control:
 
     def __init__(self):
 
-        rospy.init_node('turtle_controller', anonymous=True)
+        rospy.init_node('controller', anonymous=True)
         self.velocitylf_publisher = rospy.Publisher('/wheel_lhs_front_velocity_controller/command', Float64, queue_size=10)
         self.velocityrf_publisher = rospy.Publisher('/wheel_rhs_front_velocity_controller/command', Float64, queue_size=10)
         self.velocitylr_publisher = rospy.Publisher('/wheel_lhs_rear_velocity_controller/command', Float64, queue_size=10)
@@ -33,7 +33,7 @@ class Turtle:
         self.kp = 0.5
         self.ki = 0.5
         self.kd = 0.0
-        self.dist_ld = 0.5
+        self.dist_ld = 0.3
 
         self.dt = 0.1
         self.currentx = 0.0
@@ -52,11 +52,15 @@ class Turtle:
 
         # Setup matplotlib for plotting
         self.fig, (self.ax1, self.ax2) = plt.subplots(1, 2, figsize=(12, 6))
+        # self.fig, (self.ax1) = plt.subplots(1, figsize=(6, 6))
+
 
         # Plot for waypoints
         self.ax1.set_xlabel('X')
         self.ax1.set_ylabel('Y')
         self.ax1.set_title('Waypoints')
+        self.ax1.set_xlim(-10, 1)  # Set x-axis limits from -10 to 10
+        self.ax1.set_ylim(-2.5, 2.5)  # Set y-axis limits from -10 to 10
         self.waypoints_x = []
         self.waypoints_y = []
         self.waypoints_plot, = self.ax1.plot([], [], 'b--', label='Waypoints')
@@ -74,6 +78,7 @@ class Turtle:
         self.waypoints = [(msg.a[i], msg.b[i]) for i in range(msg.length)]
         self.x_goal_point = msg.a[0]
         self.y_goal_point = msg.b[0]
+        self.waypoints.reverse()
         self.update_waypoints_plot()
 
     def update_pose(self, data:ModelStates):
@@ -123,27 +128,31 @@ class Turtle:
         self.fig.canvas.flush_events()
 
         return self.throttle_output
-
+    
     def find_lookahead_point(self, robot_position):
         candidate_lookahead_points = []
+        max_index = -1
 
-        for waypoint in self.waypoints:
-            distance_to_robot = np.linalg.norm(np.array(waypoint) - np.array(robot_position))
+        for i, waypoint in enumerate(self.waypoints):
+                distance_to_robot = np.linalg.norm(np.array(waypoint) - np.array(robot_position))
 
-            if distance_to_robot < self.dist_ld:
-                candidate_lookahead_points.append(waypoint)
+                if distance_to_robot < self.dist_ld and i > max_index:
+                        candidate_lookahead_points = [waypoint]
+                        max_index = i
+                elif distance_to_robot < self.dist_ld and i == max_index:
+                        candidate_lookahead_points.append(waypoint)
 
         if not candidate_lookahead_points:
-            return None  # No valid lookahead point found
+                return None  # No valid lookahead point found
 
         # Calculate distances from candidate lookahead points to the goal
-        distances_to_goal = [np.linalg.norm(np.array(waypoint) - np.array((self.x_goal_point, self.y_goal_point))) for waypoint in candidate_lookahead_points]
+        # distances_to_goal = [np.linalg.norm(np.array(waypoint) - np.array((self.x_goal_point, self.y_goal_point))) for waypoint in candidate_lookahead_points]
 
-        # Find the index of the candidate with the minimum distance to the goal
-        min_distance_index = np.argmin(distances_to_goal)
+        # Find the index of the candidate with the maximum distance to the goal
+        max_distance_index = np.argmax(distance_to_robot)
 
-        # Select the lookahead point with the minimum distance to the goal
-        lookahead_point = candidate_lookahead_points[min_distance_index]
+        # Select the lookahead point with the maximum distance to the goal
+        lookahead_point = candidate_lookahead_points[max_distance_index]
 
         return lookahead_point
 
@@ -184,7 +193,7 @@ class Turtle:
 
 if __name__ == '__main__':
     try:
-        x = Turtle()
+        x = Control()
         while not rospy.is_shutdown():
             if len(x.waypoints) > 0:
                 x.purePursuit()

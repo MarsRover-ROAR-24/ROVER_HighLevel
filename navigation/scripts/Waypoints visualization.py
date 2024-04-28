@@ -174,7 +174,9 @@ waypoints = [
     (8.85, 9.85),
     (8.9, 9.9),
     (8.95, 9.95),
-    (9, 9)
+    (9,9.9),
+    (9, 9.85),(9,9.5),
+    (9, 9),(9,8.5),(9,8)
 ]
 
 
@@ -184,7 +186,7 @@ x_coords = [point[0] for point in waypoints]
 y_coords = [point[1] for point in waypoints]
 
 # Plot waypoints
-plt.figure(figsize=(10, 8))
+plt.figure(figsize=(7, 5))
 plt.plot(x_coords, y_coords, 'r', label='Waypoints')
 
 plt.xlabel('X')
