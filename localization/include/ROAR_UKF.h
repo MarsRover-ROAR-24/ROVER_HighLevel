@@ -138,5 +138,10 @@ public:
 	/*** update step***/
 	void update(Eigen::MatrixXd z_measurement);
 
+	/*** Sensors Callbacks ***/
+	void encoder_callback(Eigen::VectorXd w, double dt);
+	void imu_callback(double dt, Eigen::MatrixXd z_measurement);
+	void gps_callback(double dt, Eigen::MatrixXd z_measurement, double lon0, double lat0);
+
 };
 #endif

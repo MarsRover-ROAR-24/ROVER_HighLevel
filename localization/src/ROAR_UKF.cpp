@@ -351,9 +351,8 @@ Eigen::VectorXd UKF::process_model(Eigen::VectorXd x, Eigen::VectorXd w, double 
     x_pred_sigma(6) = x(6);
 
     //position
-    // float yaw = atan2(2 * (x(0) * x(3) + x(1) * x(2)), (1 - 2 * (x(2) * x(2) + x(3) * x(3))));
+    float yaw = atan2(2 * (x(0) * x(3) + x(1) * x(2)), (1 - 2 * (x(2) * x(2) + x(3) * x(3))));
     // Update position based on linear and angular velocities
-    yaw += round(rover.rover_speeds(1) * dt*100)/100; // Update orientation
     cout << "yaw: " << yaw << endl;
 
     // Update x and y positions
@@ -484,4 +483,230 @@ void UKF::update(Eigen::MatrixXd z_measurement)
 	x_post = x_hat.replicate(1, 1);
 	P_post = P.replicate(1, 1); 
 
+}
+void UKF::encoder_callback(Eigen::VectorXd w, double dt)
+{
+    /***
+    Predict with wheel odometry process model
+    u_t: Measured wheels velocity as input
+    ***/
+    // Compute the sigma points for given mean and posteriori covariance
+    Eigen::MatrixXd sigmas = sigma_points.calculate_sigma_points(x_post, P_post);
+
+    // Pass sigmas into f(x) for wheel odometry
+    for (int i = 0; i < sigma_points.num_sigma_points; i++)
+    {
+        X_sigma.col(i)(0) = sigmas.col(i)(0);
+        X_sigma.col(i)(1) = sigmas.col(i)(1);
+        X_sigma.col(i)(2) = sigmas.col(i)(2);
+        X_sigma.col(i)(3) = sigmas.col(i)(3);
+        X_sigma.col(i)(4) = sigmas.col(i)(4);
+        X_sigma.col(i)(5) = sigmas.col(i)(5);
+        X_sigma.col(i)(6) = sigmas.col(i)(6);
+
+        // Process wheel speeds using Kinematic Model
+        ROVER rover;    
+        rover.calculate_wheel_change(w, dt);
+        float yaw = atan2(2 * (sigmas.col(i)(0) * sigmas.col(i)(3) + sigmas.col(i)(1) * sigmas.col(i)(2)), (1 - 2 * (sigmas.col(i)(2) * sigmas.col(i)(2) + sigmas.col(i)(3) * sigmas.col(i)(3))));
+
+        //position
+        // Update x and y positions
+        double linear_velocity = rover.rover_speeds(0);
+
+        // Calculate change in x and y positions
+        double dx = linear_velocity * cos(yaw) * dt;
+        double dy = linear_velocity * sin(yaw) * dt;
+
+        // Update x and y positions
+        X_sigma.col(i)(7) = sigmas.col(i)(7) + dx;
+        X_sigma.col(i)(8) = sigmas.col(i)(8) + dy;
+    }
+
+    // Compute unscented mean and covariance
+    std::tie(x_hat, P) = unscented_transform(X_sigma,
+        sigma_points.Wm,
+        sigma_points.Wc,
+        Q);
+
+    // // Save prior
+    x_post = x_hat.replicate(1, 1);
+    P_post = P.replicate(1, 1);
+}
+void UKF::imu_callback(double dt,Eigen::MatrixXd z_measurement)
+{
+        /***
+    Predict with wheel odometry process model
+    u_t: Measured wheels velocity as input
+    ***/
+    // Compute the sigma points for given mean and posteriori covariance
+    Eigen::MatrixXd sigmas = sigma_points.calculate_sigma_points(x_post, P_post);
+
+        // Pass sigmas into f(x) for wheel odometry
+    for (int i = 0; i < sigma_points.num_sigma_points; i++)
+    {
+        X_sigma.col(i)(4) = sigmas.col(i)(4);
+        X_sigma.col(i)(5) = sigmas.col(i)(5);
+        X_sigma.col(i)(6) = sigmas.col(i)(6);
+        X_sigma.col(i)(7) = sigmas.col(i)(7);
+        X_sigma.col(i)(8) = sigmas.col(i)(8);
+
+        // considern changing this quaternion into UnitQuaternion
+        Quaternion attitude(sigmas.col(i)(0),
+        sigmas.col(i)(1),
+        sigmas.col(i)(2),
+        sigmas.col(i)(3));
+        
+        // Estimated attitude update with incremental rotation update
+        // EQN 3.26 & EQN 3.17 (Exponential with skew matrix and delta_t)
+        //consider adding noise to the angular velocity and orientation
+        UnitQuaternion uq_omega = UnitQuaternion::omega(sigmas.col(i)(4) * dt,
+            sigmas.col(i)(5) * dt,
+            sigmas.col(i)(6) * dt);
+
+        attitude = attitude * uq_omega;
+
+        X_sigma.col(i)(0) = attitude.s;
+        X_sigma.col(i)(1) = attitude.v_1;
+        X_sigma.col(i)(2) = attitude.v_2;
+        X_sigma.col(i)(3) = attitude.v_3;
+    }
+
+    // Compute unscented mean and covariance
+    std::tie(x_prior, P_prior) = unscented_transform(X_sigma,
+        sigma_points.Wm,
+        sigma_points.Wc,
+        Q);
+
+    // // Save prior
+    // x_prior = x_hat.replicate(1, 1);
+    // P_prior = P.replicate(1, 1);
+
+    // Pass the transformed sigmas into measurement function
+    for (int i = 0; i < sigma_points.num_sigma_points; i++)
+    {
+            /***
+        Nonlinear measurement model for Orientation estimation with Quaternions
+
+        Inputs:
+        x: current sigma point of state estimate x = [q0 q1 q2 q3 omega_x omega_y omega_z].T
+
+        Outputs:
+        z_pred_sigma: sigma point after being propagated through nonlinear measurement model
+        ***/
+        // --- Measurement model ---
+        // Extract quaternion from current state estimates 
+        UnitQuaternion attitude(X_sigma.col(i)(0),
+            X_sigma.col(i)(1),
+            X_sigma.col(i)(2),
+            X_sigma.col(i)(3));
+
+        // Inverse: {B} to {0}
+        UnitQuaternion invq = attitude.inverse();
+
+        // Accelerometer
+        Eigen::VectorXd acc_pred = invq.vector_rotation_by_quaternion(g0);
+
+        // Magnetomer
+        Eigen::VectorXd mag_pred = invq.vector_rotation_by_quaternion(m0);
+
+        // Gyroscope
+        Eigen::VectorXd gyro_pred(3);
+        gyro_pred << X_sigma.col(i)(4), X_sigma.col(i)(5), X_sigma.col(i)(6);
+
+        Z_sigma.col(i) << gyro_pred, acc_pred, mag_pred, Z_sigma.col(i)(9), Z_sigma.col(i)(10); // test behaviour for last two values
+    }
+
+    std::tie(z_prior, S) = unscented_transform(Z_sigma,
+        sigma_points.Wm,
+        sigma_points.Wc,
+        R);
+
+    	/***
+    	Update step of UKF with Quaternion + Angular Velocity model i.e state space is:
+        
+        	x = [q0 q1 q2 q3 omega_x omega_y omega_z].T
+            	z = [z_gyro z_acc z_mag].T
+                
+                	Inputs:
+                    	z_measurement: Sensor measurements from gyroscope, accelerometer and magnetometer
+                        	***/
+
+	    // Compute cross covariance
+	    Eigen::MatrixXd T = Eigen::MatrixXd::Zero(x_dim, z_dim);
+        for (int i = 0; i < sigma_points.num_sigma_points; i++)
+        {
+	    	T = T + sigma_points.Wc(i) * (X_sigma.col(i) - x_prior) * (Z_sigma.col(i) - z_prior).transpose();
+	    }
+
+	    // Compute Kalman gain
+	    Eigen::MatrixXd K = T * S.inverse();
+
+	    // Update state estimate
+	    x_hat = x_hat + K * (z_measurement - z_prior); // x_hat is defined in constructor for as a temp vector (overwriting x_post)
+
+	    // Update covariance
+	    P = P - K * S * K.transpose();
+
+	    // Save posterior
+	    x_post.head(7) = x_hat.head(7);
+	    P_post.topLeftCorner(7,7) = P.topLeftCorner(7,7);
+}
+
+void UKF::gps_callback(double dt, Eigen::MatrixXd z_measurement, double lon0, double lat0)
+{
+    /***
+    Predict with wheel odometry process model
+    u_t: Measured wheels velocity as input
+    ***/
+    // Compute the sigma points for given mean and posteriori covariance
+    Eigen::MatrixXd sigmas = sigma_points.calculate_sigma_points(x_post, P_post);
+
+    // Pass sigmas into f(x) for wheel odometry
+    for (int i = 0; i < sigma_points.num_sigma_points; i++)
+    {
+        float yaw = atan2(2 * (sigmas.col(i)(0) * sigmas.col(i)(3) + sigmas.col(i)(1) * sigmas.col(i)(2)), (1 - 2 * (sigmas.col(i)(2) * sigmas.col(i)(2) + sigmas.col(i)(3) * sigmas.col(i)(3))));
+        double lat = lat0 + (180 / PI) * (sigmas.col(i)(7) / 6378137);
+        double lon = lon0 + (180 / PI) * (sigmas.col(i)(8) / 6378137) / cos(lat0);
+
+        Z_sigma.col(i) << Z_sigma.col(i)(0), Z_sigma.col(i)(1), Z_sigma.col(i)(2), Z_sigma.col(i)(3), Z_sigma.col(i)(4), Z_sigma.col(i)(5), Z_sigma.col(i)(6),
+                        Z_sigma.col(i)(7), Z_sigma.col(i)(8), lat, lon;
+
+    }
+
+    std::tie(z_prior, S) = unscented_transform(Z_sigma,
+        sigma_points.Wm,
+        sigma_points.Wc,
+        R);
+    	/***
+    	Update step of UKF with Quaternion + Angular Velocity model i.e state space is:
+        
+        	x = [q0 q1 q2 q3 omega_x omega_y omega_z].T
+            	z = [z_gyro z_acc z_mag].T
+                
+                	Inputs:
+                    	z_measurement: Sensor measurements from gyroscope, accelerometer and magnetometer
+                        	***/
+
+    // Compute cross covariance
+    Eigen::MatrixXd T = Eigen::MatrixXd::Zero(x_dim, z_dim);
+    for (int i = 0; i < sigma_points.num_sigma_points; i++)
+    {
+        T = T + sigma_points.Wc(i) * (X_sigma.col(i) - x_prior) * (Z_sigma.col(i) - z_prior).transpose();
+    }
+
+    // Compute Kalman gain
+    Eigen::MatrixXd K = T * S.inverse();
+
+    // Update state estimate
+    x_hat = x_hat + K * (z_measurement - z_prior); // x_hat is defined in constructor for as a temp vector (overwriting x_post)
+
+    // Update covariance
+    P = P - K * S * K.transpose();
+
+    // Save posterior
+    x_post.tail(2) = x_hat.tail(2);
+    P_post.col(7) = P.col(7);
+    P_post.col(8) = P.col(8);
+    P_post.row(7) = P.row(7);
+    P_post.row(8) = P.row(8);
 }
