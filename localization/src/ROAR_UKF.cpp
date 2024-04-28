@@ -529,10 +529,13 @@ void UKF::encoder_callback(Eigen::VectorXd w, double dt)
         Q);
 
     // // Save prior
-    x_post = x_hat.replicate(1, 1);
-    P_post = P.replicate(1, 1);
+    x_post.tail(2) = x_hat.tail(2);
+    P_post.col(7) = P.col(7);
+    P_post.col(8) = P.col(8);
+    P_post.row(7) = P.row(7);
+    P_post.row(8) = P.row(8);
 }
-void UKF::imu_callback(double dt,Eigen::MatrixXd z_measurement)
+void UKF::imu_callback(Eigen::VectorXd z_measurement, double dt)
 {
         /***
     Predict with wheel odometry process model
@@ -649,10 +652,13 @@ void UKF::imu_callback(double dt,Eigen::MatrixXd z_measurement)
 
 	    // Save posterior
 	    x_post.head(7) = x_hat.head(7);
+        // x_post(4) = z_measurement(0);
+        // x_post(5) = z_measurement(1);
+        // x_post(6) = z_measurement(2);
 	    P_post.topLeftCorner(7,7) = P.topLeftCorner(7,7);
 }
 
-void UKF::gps_callback(double dt, Eigen::MatrixXd z_measurement, double lon0, double lat0)
+void UKF::gps_callback( Eigen::VectorXd z_measurement, double dt, double lon0, double lat0)
 {
     /***
     Predict with wheel odometry process model

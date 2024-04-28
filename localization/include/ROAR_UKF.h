@@ -140,8 +140,8 @@ public:
 
 	/*** Sensors Callbacks ***/
 	void encoder_callback(Eigen::VectorXd w, double dt);
-	void imu_callback(double dt, Eigen::MatrixXd z_measurement);
-	void gps_callback(double dt, Eigen::MatrixXd z_measurement, double lon0, double lat0);
+	void imu_callback(Eigen::VectorXd z_measurement, double dt);
+	void gps_callback(Eigen::VectorXd z_measurement, double dt, double lon0, double lat0);
 
 };
 #endif

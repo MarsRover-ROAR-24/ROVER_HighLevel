@@ -53,9 +53,9 @@ include_directories(
 # target_link_libraries(ROAR_main ${catkin_LIBRARIES} Eigen3::Eigen)
 # target_include_directories(ROAR_main PRIVATE include)
 
-# add_executable(ROAR_main_simulation src/ROAR_main_simulation.cpp src/ROAR_UKF.cpp src/Quaternion.cpp)
-# target_link_libraries(ROAR_main_simulation ${catkin_LIBRARIES} Eigen3::Eigen)
-# target_include_directories(ROAR_main_simulation PRIVATE include)
+add_executable(ROAR_main_simulation src/ROAR_main_simulation.cpp src/ROAR_UKF.cpp src/Quaternion.cpp)
+target_link_libraries(ROAR_main_simulation ${catkin_LIBRARIES} Eigen3::Eigen)
+target_include_directories(ROAR_main_simulation PRIVATE include)
 
 # add_executable(OOSM src/OOSM.cpp)
 # add_dependencies(OOSM localization_generate_messages_cpp)
@@ -70,9 +70,9 @@ include_directories(
 # target_link_libraries(FilterOutput ${catkin_LIBRARIES} Eigen3::Eigen)
 # target_include_directories(FilterOutput PRIVATE include)
 
-# add_executable(ROAR_UKF src/ROAR_main src/ROAR_UKF.cpp src/Quaternion.cpp)
-# target_link_libraries(ROAR_UKF ${catkin_LIBRARIES} Eigen3::Eigen)
-# target_include_directories(ROAR_UKF PRIVATE include)
+add_executable(ROAR_UKF src/ROAR_main src/ROAR_UKF.cpp src/Quaternion.cpp)
+target_link_libraries(ROAR_UKF ${catkin_LIBRARIES} Eigen3::Eigen)
+target_include_directories(ROAR_UKF PRIVATE include)
 
 
 # catkin_install_python(PROGRAMS

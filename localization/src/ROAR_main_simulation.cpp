@@ -26,6 +26,14 @@ bool intial_measurment = true;
 double lat0 = 0.0;
 double lon0 = 0.0;
 
+// Initialize Sigma Points and UKF
+MerwedSigmaPoints sigma_points(n_state_dim, alpha, beta_, kappa);
+UKF ukf(sigma_points);
+
+ros::Subscriber imu_sub;
+ros::Subscriber encoder_sub;
+ros::Subscriber gps_sub;
+
 void encoderCallback(const sensor_msgs::JointState::ConstPtr& msg)
 {
     if (msg->velocity.size() != 6) return;
@@ -37,19 +45,22 @@ void encoderCallback(const sensor_msgs::JointState::ConstPtr& msg)
     }
     ros::Time encoder_current_time_stamp = msg->header.stamp;
     dt = (encoder_current_time_stamp - encoder_prev_time_stamp).toSec();
-    encoder_prev_time_stamp = encoder_current_time_stamp;
 
     for (int i = 0; i < 6; ++i) {
         encoder_measurement[i] = msg->velocity[i];
     }
-    UKF::encoder_callback(encoder_measurement, dt);
+    ukf.encoder_callback(encoder_measurement, dt);
+    encoder_prev_time_stamp = encoder_current_time_stamp;
+    // cout << "encoder dt: " << dt << endl;
+    cout << "x_posterior: " << ukf.x_post.transpose() << endl;
+
 }
 void gpsCallback(const sensor_msgs::NavSatFix::ConstPtr& msg)
 {
     if (intial_measurment == true)
     {
-        lat0 = msg->measurements[9];
-        lon0 = msg->measurements[10];
+        lat0 = msg->latitude;
+        lon0 = msg->longitude;
         intial_measurment = false;
     }
     if (encoder_prev_time_stamp.isZero()) 
@@ -59,11 +70,13 @@ void gpsCallback(const sensor_msgs::NavSatFix::ConstPtr& msg)
     }
     ros::Time gps_current_time_stamp = msg->header.stamp;
     dt = (gps_current_time_stamp - gps_prev_time_stamp).toSec();
-    gps_prev_time_stamp = gps_current_time_stamp;
 
     z_measurement[9] = msg->latitude;
     z_measurement[10] = msg->longitude;
-    UKF::gps_callback(z_measurement, dt, lat0, lon0);
+    ukf.gps_callback(z_measurement, dt, lat0, lon0);
+    gps_prev_time_stamp = gps_current_time_stamp;
+    // cout << "gps dt: " << dt << endl;
+    cout << "x_posterior: " << ukf.x_post.transpose() << endl;
 }
 void imuCallback(const localization::buffer::ConstPtr& msg)
 {
@@ -74,13 +87,14 @@ void imuCallback(const localization::buffer::ConstPtr& msg)
     }
     ros::Time imu_current_time_stamp = msg->header.stamp;
     dt = (imu_current_time_stamp - imu_prev_time_stamp).toSec();
-    imu_prev_time_stamp = imu_current_time_stamp;
 
     for (int i = 0; i < 9; ++i) 
     {
         z_measurement[i] = msg->measurements[i];
     }
-    UKF::imu_callback(z_measurement, dt);
+    ukf.imu_callback(z_measurement, dt);
+    imu_prev_time_stamp = imu_current_time_stamp;
+    cout << "x_posterior: " << ukf.x_post.transpose() << endl;
 }
 
 int main(int argc, char **argv) 
@@ -88,21 +102,17 @@ int main(int argc, char **argv)
     ros::init(argc, argv, "ukf_localization");
     ros::NodeHandle nh;
 
+    imu_sub = nh.subscribe("/imu_readings", 1000, imuCallback);
+    encoder_sub = nh.subscribe("/joint_states", 1000, encoderCallback);
+    gps_sub = nh.subscribe("/gps", 1000, gpsCallback);
+
     z_measurement = Eigen::VectorXd::Zero(11);
     encoder_measurement = Eigen::VectorXd::Zero(6);
 
-    imu_sub = nh.subscribe("/imu_readings", 1000, &SensorDataPublisher::imuCallback, this);
-    encoder_sub = nh.subscribe("/joint_states", 1000, &SensorDataPublisher::encoderCallback, this);
-    gps_sub = nh.subscribe("/gps", 1000, &SensorDataPublisher::gpsCallback, this);
-
-    // Initialize Sigma Points and UKF
-    MerwedSigmaPoints sigma_points(n_state_dim, alpha, beta_, kappa);
-    UKF ukf(sigma_points);
-
     while (ros::ok())
     {
-        cout << "x_posterior: " << ukf.x_posterior.transpose() << endl;
-        cout << "P_posterior: " << ukf.P_posterior << endl;
+        // cout << "x_posterior: " << ukf.x_post.transpose() << endl;
+        // cout << "P_posterior: " << ukf.P_post << endl;
         ros::spinOnce();
     }
 
