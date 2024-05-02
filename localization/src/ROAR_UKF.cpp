@@ -214,6 +214,7 @@ UKF::UKF(MerwedSigmaPoints merwed_sigma_points)
 
     // Compute mean and covariance using unscented transform
     z_prior = z;
+    S_prior = S;
 
     // Assign the sigma points into UKF class
     sigma_points = merwed_sigma_points;
@@ -353,7 +354,7 @@ Eigen::VectorXd UKF::process_model(Eigen::VectorXd x, Eigen::VectorXd w, double 
     //position
     float yaw = atan2(2 * (x(0) * x(3) + x(1) * x(2)), (1 - 2 * (x(2) * x(2) + x(3) * x(3))));
     // Update position based on linear and angular velocities
-    cout << "yaw: " << yaw << endl;
+    // cout << "yaw: " << yaw << endl;
 
     // Update x and y positions
     double linear_velocity = round(rover.rover_speeds(0)*100)/100;
@@ -534,6 +535,20 @@ void UKF::encoder_callback(Eigen::VectorXd w, double dt)
     P_post.col(8) = P.col(8);
     P_post.row(7) = P.row(7);
     P_post.row(8) = P.row(8);
+
+    x_prior.tail(2) = x_hat.tail(2);
+    P_prior.col(7) = P.col(7);
+    P_prior.col(8) = P.col(8);
+    P_prior.row(7) = P.row(7);
+    P_prior.row(8) = P.row(8);
+
+
+    // cout << "x_hat: " << endl << x_hat.transpose() << endl;
+    // cout << "x_post: " << x_post.transpose() << endl;
+    // cout << "P_post: " << endl << P_post << endl;
+
+    // cout << "weight mean: " << endl << sigma_points.Wm << endl;
+    // cout << "weight cov: " << endl << sigma_points.Wc << endl;
 }
 void UKF::imu_callback(Eigen::VectorXd z_measurement, double dt)
 {
@@ -575,10 +590,23 @@ void UKF::imu_callback(Eigen::VectorXd z_measurement, double dt)
     }
 
     // Compute unscented mean and covariance
-    std::tie(x_prior, P_prior) = unscented_transform(X_sigma,
+    std::tie(x_hat, P) = unscented_transform(X_sigma,
         sigma_points.Wm,
         sigma_points.Wc,
         Q);
+    
+    // cout << "weight mean: " << endl << sigma_points.Wm << endl;
+    // cout << "weight cov: " << endl << sigma_points.Wc << endl;
+
+    // Save posterior
+    x_prior.head(4) = x_hat.head(4);
+    x_prior(4) = z_measurement(0);
+    x_prior(5) = z_measurement(1);
+    x_prior(6) = z_measurement(2);
+    P_prior.topLeftCorner(7,7) = P.topLeftCorner(7,7);
+  
+    // cout << "x_prior: " << endl << x_prior.transpose() << endl;
+    // cout << "P_prior: " << endl << P_prior << endl;
 
     // // Save prior
     // x_prior = x_hat.replicate(1, 1);
@@ -619,10 +647,19 @@ void UKF::imu_callback(Eigen::VectorXd z_measurement, double dt)
         Z_sigma.col(i) << gyro_pred, acc_pred, mag_pred, Z_sigma.col(i)(9), Z_sigma.col(i)(10); // test behaviour for last two values
     }
 
-    std::tie(z_prior, S) = unscented_transform(Z_sigma,
+    std::tie(z, S) = unscented_transform(Z_sigma,
         sigma_points.Wm,
         sigma_points.Wc,
         R);
+
+    z_prior.head(9) = z.head(9);
+    S_prior.topLeftCorner(9,9) = S.topLeftCorner(9,9);
+
+    // cout << "weight mean: " << endl << sigma_points.Wm << endl;
+    // cout << "weight cov: " << endl << sigma_points.Wc << endl;
+
+    // cout << "z_prior: " << endl << z_prior.transpose() << endl;
+    // cout << "S: " << endl << S << endl;
 
     	/***
     	Update step of UKF with Quaternion + Angular Velocity model i.e state space is:
@@ -648,14 +685,33 @@ void UKF::imu_callback(Eigen::VectorXd z_measurement, double dt)
 	    x_hat = x_hat + K * (z_measurement - z_prior); // x_hat is defined in constructor for as a temp vector (overwriting x_post)
 
 	    // Update covariance
-	    P = P - K * S * K.transpose();
+	    P = P_prior - K * S_prior * K.transpose();
 
 	    // Save posterior
-	    x_post.head(7) = x_hat.head(7);
-        // x_post(4) = z_measurement(0);
-        // x_post(5) = z_measurement(1);
-        // x_post(6) = z_measurement(2);
+	    x_post.head(4) = x_hat.head(4);
+        x_post(4) = z_measurement(0);
+        x_post(5) = z_measurement(1);
+        x_post(6) = z_measurement(2);
 	    P_post.topLeftCorner(7,7) = P.topLeftCorner(7,7);
+        
+        // cout << "T: " << endl << T << endl;
+        // cout << "K: " << endl << K << endl;
+        // cout << "x_hat: " << endl << x_hat.transpose() << endl;
+        // cout << "x_post: " << x_post.transpose() << endl;
+        // cout << "P_post: " << endl << P_post << endl;
+    
+    
+    float roll = atan2(2*(x_post(0)*x_post(1) + x_post(2)
+                            *x_post(3)), 1 - 2*(x_post(1)*x_post(1) 
+                                + x_post(2)*x_post(2)))*180/PI;
+	float pitch = asin(2*(x_post(0)*x_post(2) - x_post(3)*x_post(1)))*180/PI;
+	float yaw = atan2(2*(x_post(0)*x_post(3) + x_post(1)
+                        *x_post(2)), 1 - 2*(x_post(2)*x_post(2)
+                            + x_post(3)*x_post(3)))*180/PI;
+
+    cout << "filter output: " << roll << " " << pitch << " " << yaw << endl;
+
+
 }
 
 void UKF::gps_callback( Eigen::VectorXd z_measurement, double dt, double lon0, double lat0)
@@ -679,10 +735,17 @@ void UKF::gps_callback( Eigen::VectorXd z_measurement, double dt, double lon0, d
 
     }
 
-    std::tie(z_prior, S) = unscented_transform(Z_sigma,
+    std::tie(z, S) = unscented_transform(Z_sigma,
         sigma_points.Wm,
         sigma_points.Wc,
         R);
+
+    z_prior.tail(2) = z.tail(2);
+    S_prior.col(9)  = S.col(9);
+    S_prior.col(10) = S.col(10);
+    S_prior.row(9)  = S.row(9);
+    S_prior.row(10) = S.row(10);
+
     	/***
     	Update step of UKF with Quaternion + Angular Velocity model i.e state space is:
         
@@ -707,7 +770,7 @@ void UKF::gps_callback( Eigen::VectorXd z_measurement, double dt, double lon0, d
     x_hat = x_hat + K * (z_measurement - z_prior); // x_hat is defined in constructor for as a temp vector (overwriting x_post)
 
     // Update covariance
-    P = P - K * S * K.transpose();
+    P = P_prior - K * S_prior * K.transpose();
 
     // Save posterior
     x_post.tail(2) = x_hat.tail(2);

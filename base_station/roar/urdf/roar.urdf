@@ -418,8 +418,8 @@
       <bodyname>base_link</bodyname>
       <topicName>magnetometer</topicName>
       <referenceHeading>0.0</referenceHeading>
-      <declination>11.4017</declination>
-      <inclination>-68.5006</inclination>
+      <declination>0.1989972053</declination>
+      <inclination>-1.1955610096</inclination>
       <offset>0 0 0</offset>
       <driftFrequency>0 0 0</driftFrequency>
       <gaussianNoise>0 0 0</gaussianNoise>

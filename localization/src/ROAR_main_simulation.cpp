@@ -7,11 +7,13 @@
 #include <sensor_msgs/Imu.h>
 #include <std_msgs/Float64MultiArray.h>
 #include "localization/buffer.h"
+#include <gazebo_msgs/ModelStates.h>
 
 using namespace std;
 
 Eigen::VectorXd z_measurement;
 Eigen::VectorXd encoder_measurement;
+Eigen::VectorXd ground_truth;
 
 const int n_state_dim = 9;  // x_state dimension
 const float alpha = 0.3;
@@ -20,7 +22,7 @@ const float kappa = 0.1;
 ros::Time encoder_prev_time_stamp;
 ros::Time imu_prev_time_stamp;
 ros::Time gps_prev_time_stamp;
-double dt = 0.0;
+double dt = 0.01;
 bool new_measurement_received = false;
 bool intial_measurment = true;
 double lat0 = 0.0;
@@ -33,6 +35,7 @@ UKF ukf(sigma_points);
 ros::Subscriber imu_sub;
 ros::Subscriber encoder_sub;
 ros::Subscriber gps_sub;
+ros::Subscriber ground_truth_sub;
 
 void encoderCallback(const sensor_msgs::JointState::ConstPtr& msg)
 {
@@ -49,10 +52,12 @@ void encoderCallback(const sensor_msgs::JointState::ConstPtr& msg)
     for (int i = 0; i < 6; ++i) {
         encoder_measurement[i] = msg->velocity[i];
     }
+    // cout << "encoder process" << endl;
+    // cout << "ground_truth: " << ground_truth.transpose() << endl;
     ukf.encoder_callback(encoder_measurement, dt);
     encoder_prev_time_stamp = encoder_current_time_stamp;
     // cout << "encoder dt: " << dt << endl;
-    cout << "x_posterior: " << ukf.x_post.transpose() << endl;
+    // cout << "encoder_x_posterior: " << ukf.x_post.transpose() << endl;
 
 }
 void gpsCallback(const sensor_msgs::NavSatFix::ConstPtr& msg)
@@ -69,14 +74,14 @@ void gpsCallback(const sensor_msgs::NavSatFix::ConstPtr& msg)
         return;
     }
     ros::Time gps_current_time_stamp = msg->header.stamp;
-    dt = (gps_current_time_stamp - gps_prev_time_stamp).toSec();
+    // dt = (gps_current_time_stamp - gps_prev_time_stamp).toNSec();
 
     z_measurement[9] = msg->latitude;
     z_measurement[10] = msg->longitude;
     ukf.gps_callback(z_measurement, dt, lat0, lon0);
     gps_prev_time_stamp = gps_current_time_stamp;
     // cout << "gps dt: " << dt << endl;
-    cout << "x_posterior: " << ukf.x_post.transpose() << endl;
+    cout << "gps_x_posterior: " << ukf.x_post.transpose() << endl;
 }
 void imuCallback(const localization::buffer::ConstPtr& msg)
 {
@@ -92,9 +97,34 @@ void imuCallback(const localization::buffer::ConstPtr& msg)
     {
         z_measurement[i] = msg->measurements[i];
     }
+    // cout << "imu process" << endl;
+    cout << "ground_truth : " << ground_truth.transpose() << endl;
     ukf.imu_callback(z_measurement, dt);
     imu_prev_time_stamp = imu_current_time_stamp;
-    cout << "x_posterior: " << ukf.x_post.transpose() << endl;
+    // cout << "imu dt: " << dt << endl;
+    // cout << "imu_x_posterior: " << ukf.x_post.transpose() << endl;
+}
+void ground_truth_callback(const gazebo_msgs::ModelStates::ConstPtr msg)
+{
+
+    // Saving pose
+// ground_truth << msg->pose[1].orientation.w,
+//                 msg->pose[1].orientation.x,
+//                 msg->pose[1].orientation.y,
+//                 msg->pose[1].orientation.z,
+//                 msg->pose[1].position.x,
+//                 msg->pose[1].position.y;
+
+    float roll = atan2(2*(msg->pose[1].orientation.w*msg->pose[1].orientation.x + msg->pose[1].orientation.y
+                            *msg->pose[1].orientation.z), 1 - 2*(msg->pose[1].orientation.x*msg->pose[1].orientation.x 
+                                + msg->pose[1].orientation.y*msg->pose[1].orientation.y)) * 180/PI;
+	float pitch = asin(2*(msg->pose[1].orientation.w*msg->pose[1].orientation.y - msg->pose[1].orientation.z*msg->pose[1].orientation.x))*180/PI;
+	float yaw = atan2(2*(msg->pose[1].orientation.w*msg->pose[1].orientation.z + msg->pose[1].orientation.x
+                        *msg->pose[1].orientation.y), 1 - 2*(msg->pose[1].orientation.y*msg->pose[1].orientation.y 
+                            + msg->pose[1].orientation.z*msg->pose[1].orientation.z))*180/PI;
+
+    ground_truth << roll, pitch, yaw;    
+
 }
 
 int main(int argc, char **argv) 
@@ -104,10 +134,12 @@ int main(int argc, char **argv)
 
     imu_sub = nh.subscribe("/imu_readings", 1000, imuCallback);
     encoder_sub = nh.subscribe("/joint_states", 1000, encoderCallback);
-    gps_sub = nh.subscribe("/gps", 1000, gpsCallback);
+    // gps_sub = nh.subscribe("/gps", 1000, gpsCallback);
+    ground_truth_sub = nh.subscribe("gazebo/model_states", 1000, ground_truth_callback);
 
     z_measurement = Eigen::VectorXd::Zero(11);
     encoder_measurement = Eigen::VectorXd::Zero(6);
+    ground_truth = Eigen::VectorXd::Zero(3);
 
     while (ros::ok())
     {

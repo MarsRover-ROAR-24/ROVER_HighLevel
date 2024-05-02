@@ -82,6 +82,7 @@ public:
 	Eigen::VectorXd z;			// z_state
 	Eigen::VectorXd z_prior;    // z_state prediction (or z_bar)
 	Eigen::MatrixXd S;		    // Posteriori measurement covariance matrix
+	Eigen::MatrixXd S_prior;
 
     // Posteriori Estimate Covariance Matrix 
 	Eigen::MatrixXd P;			// Posteriori estimate covariance matrix
