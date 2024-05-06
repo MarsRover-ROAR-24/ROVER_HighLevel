@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<launch>
+<!-- <include file="$(find roar)/launch/spawn.launch"/> -->
+<node pkg="localization" type="synchronizer.py" name="sync_test"/>
+<node pkg="localization" type="ROAR_main_simulation" name="ukf_localization" output="screen"/> 
+<!-- <node pkg="localization" type="model_state_publisher.py" name="model_state_publisher" output="screen"/> -->
+<!-- <include file="$(find teleoperation)/launch/teleoperation.launch"/>  -->
+</launch>

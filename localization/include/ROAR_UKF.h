@@ -14,9 +14,9 @@
 // --- Global Frame Values ---
 // Magnetometer
 // Constants dervied from location: https://www.ngdc.noaa.gov/geomag/calculators/magcalc.shtml#igrfwmm
-#define INCLINATION -68.5006 * (PI/180.0)      // Inclination Angle (rads) 
-#define DECLINATION 11.4017 * (PI/180.0)       // Declination Angle (rads)
-#define B_INTENSITY 21951.5e-9                 // Magnetic Field Intensity (Tesla)
+#define INCLINATION 45.1251 * (PI/180.0)      // Inclination Angle (rads) 
+#define DECLINATION 4.5242 * (PI/180.0)       // Declination Angle (rads)
+#define B_INTENSITY 44087.6e-09                 // Magnetic Field Intensity (Tesla)
 
 // Merwe Scaled Sigma points for UKF
 class MerwedSigmaPoints

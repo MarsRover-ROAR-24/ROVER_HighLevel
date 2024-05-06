@@ -605,7 +605,8 @@ void UKF::imu_callback(Eigen::VectorXd z_measurement, double dt)
     x_prior(6) = z_measurement(2);
     P_prior.topLeftCorner(7,7) = P.topLeftCorner(7,7);
   
-    // cout << "x_prior: " << endl << x_prior.transpose() << endl;
+    // cout << "x_prior: " << x_prior.transpose() << endl;
+    cout << "x_prior: " << endl << x_prior.transpose() << endl;
     // cout << "P_prior: " << endl << P_prior << endl;
 
     // // Save prior
@@ -701,15 +702,16 @@ void UKF::imu_callback(Eigen::VectorXd z_measurement, double dt)
         // cout << "P_post: " << endl << P_post << endl;
     
     
-    float roll = atan2(2*(x_post(0)*x_post(1) + x_post(2)
-                            *x_post(3)), 1 - 2*(x_post(1)*x_post(1) 
-                                + x_post(2)*x_post(2)))*180/PI;
-	float pitch = asin(2*(x_post(0)*x_post(2) - x_post(3)*x_post(1)))*180/PI;
-	float yaw = atan2(2*(x_post(0)*x_post(3) + x_post(1)
-                        *x_post(2)), 1 - 2*(x_post(2)*x_post(2)
-                            + x_post(3)*x_post(3)))*180/PI;
+    // float roll = atan2(2*(x_post(0)*x_post(1) + x_post(2)
+    //                         *x_post(3)), 1 - 2*(x_post(1)*x_post(1) 
+    //                             + x_post(2)*x_post(2)))*180/PI;
+	// float pitch = asin(2*(x_post(0)*x_post(2) - x_post(3)*x_post(1)))*180/PI;
+	// float yaw = atan2(2*(x_post(0)*x_post(3) + x_post(1)
+    //                     *x_post(2)), 1 - 2*(x_post(2)*x_post(2)
+    //                         + x_post(3)*x_post(3)))*180/PI;
 
-    cout << "filter output: " << roll << " " << pitch << " " << yaw << endl;
+    // cout << "filter output: " << roll << " " << pitch << " " << yaw << endl;
+    // cout << "x_post: " << x_post.transpose() << endl;
 
 
 }

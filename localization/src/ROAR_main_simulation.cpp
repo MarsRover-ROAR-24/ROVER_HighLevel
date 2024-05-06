@@ -5,15 +5,16 @@
 #include <sensor_msgs/NavSatFix.h>
 #include <geometry_msgs/Vector3Stamped.h>
 #include <sensor_msgs/Imu.h>
+#include <sensor_msgs/MagneticField.h>
 #include <std_msgs/Float64MultiArray.h>
 #include "localization/buffer.h"
 #include <gazebo_msgs/ModelStates.h>
 
 using namespace std;
 
-Eigen::VectorXd z_measurement;
-Eigen::VectorXd encoder_measurement;
-Eigen::VectorXd ground_truth;
+Eigen::VectorXd z_measurement(11);
+Eigen::VectorXd encoder_measurement(6);
+Eigen::VectorXd ground_truth(3);
 
 const int n_state_dim = 9;  // x_state dimension
 const float alpha = 0.3;
@@ -22,7 +23,7 @@ const float kappa = 0.1;
 ros::Time encoder_prev_time_stamp;
 ros::Time imu_prev_time_stamp;
 ros::Time gps_prev_time_stamp;
-double dt = 0.01;
+double dt = 0.001;
 bool new_measurement_received = false;
 bool intial_measurment = true;
 double lat0 = 0.0;
@@ -37,8 +38,12 @@ ros::Subscriber encoder_sub;
 ros::Subscriber gps_sub;
 ros::Subscriber ground_truth_sub;
 
+ros::Publisher state_publisher;
+
 void encoderCallback(const sensor_msgs::JointState::ConstPtr& msg)
 {
+    std_msgs::Float64MultiArray state_msg;
+
     if (msg->velocity.size() != 6) return;
 
     if (encoder_prev_time_stamp.isZero()) 
@@ -47,7 +52,7 @@ void encoderCallback(const sensor_msgs::JointState::ConstPtr& msg)
         return;
     }
     ros::Time encoder_current_time_stamp = msg->header.stamp;
-    dt = (encoder_current_time_stamp - encoder_prev_time_stamp).toSec();
+    // dt = (encoder_current_time_stamp - encoder_prev_time_stamp).toSec();
 
     for (int i = 0; i < 6; ++i) {
         encoder_measurement[i] = msg->velocity[i];
@@ -59,6 +64,8 @@ void encoderCallback(const sensor_msgs::JointState::ConstPtr& msg)
     // cout << "encoder dt: " << dt << endl;
     // cout << "encoder_x_posterior: " << ukf.x_post.transpose() << endl;
 
+    state_msg.data = {ukf.x_post[0], ukf.x_post[1], ukf.x_post[2], ukf.x_post[3], ukf.x_post[4], ukf.x_post[5], ukf.x_post[6], ukf.x_post[7], ukf.x_post[8]};
+    state_publisher.publish(state_msg);
 }
 void gpsCallback(const sensor_msgs::NavSatFix::ConstPtr& msg)
 {
@@ -85,6 +92,8 @@ void gpsCallback(const sensor_msgs::NavSatFix::ConstPtr& msg)
 }
 void imuCallback(const localization::buffer::ConstPtr& msg)
 {
+    std_msgs::Float64MultiArray state_msg;
+
     if (imu_prev_time_stamp.isZero()) 
     {
         imu_prev_time_stamp = msg->header.stamp;
@@ -98,11 +107,15 @@ void imuCallback(const localization::buffer::ConstPtr& msg)
         z_measurement[i] = msg->measurements[i];
     }
     // cout << "imu process" << endl;
-    cout << "ground_truth : " << ground_truth.transpose() << endl;
+    // cout << "ground_truth : " << ground_truth.transpose() << endl;
+    // cout << "dt: " << dt << endl;
     ukf.imu_callback(z_measurement, dt);
     imu_prev_time_stamp = imu_current_time_stamp;
     // cout << "imu dt: " << dt << endl;
     // cout << "imu_x_posterior: " << ukf.x_post.transpose() << endl;
+
+    state_msg.data = {ukf.x_post[0], ukf.x_post[1], ukf.x_post[2], ukf.x_post[3], ukf.x_post[4], ukf.x_post[5], ukf.x_post[6], ukf.x_post[7], ukf.x_post[8]};
+    state_publisher.publish(state_msg);
 }
 void ground_truth_callback(const gazebo_msgs::ModelStates::ConstPtr msg)
 {
@@ -124,28 +137,31 @@ void ground_truth_callback(const gazebo_msgs::ModelStates::ConstPtr msg)
                             + msg->pose[1].orientation.z*msg->pose[1].orientation.z))*180/PI;
 
     ground_truth << roll, pitch, yaw;    
-
 }
 
 int main(int argc, char **argv) 
 {
     ros::init(argc, argv, "ukf_localization");
     ros::NodeHandle nh;
-
+    
     imu_sub = nh.subscribe("/imu_readings", 1000, imuCallback);
-    encoder_sub = nh.subscribe("/joint_states", 1000, encoderCallback);
+    // encoder_sub = nh.subscribe("/joint_states", 1000, encoderCallback);
     // gps_sub = nh.subscribe("/gps", 1000, gpsCallback);
     ground_truth_sub = nh.subscribe("gazebo/model_states", 1000, ground_truth_callback);
 
-    z_measurement = Eigen::VectorXd::Zero(11);
-    encoder_measurement = Eigen::VectorXd::Zero(6);
-    ground_truth = Eigen::VectorXd::Zero(3);
+    // z_measurement = Eigen::VectorXd::Zero(11);
+    // encoder_measurement = Eigen::VectorXd::Zero(6);
+    // ground_truth = Eigen::VectorXd::Zero(3);
+
+    state_publisher = nh.advertise<std_msgs::Float64MultiArray>("/filtered_state", 1000);
+    ros::Rate loop_rate(10);
 
     while (ros::ok())
     {
         // cout << "x_posterior: " << ukf.x_post.transpose() << endl;
         // cout << "P_posterior: " << ukf.P_post << endl;
         ros::spinOnce();
+        loop_rate.sleep();
     }
 
 	return 0;
