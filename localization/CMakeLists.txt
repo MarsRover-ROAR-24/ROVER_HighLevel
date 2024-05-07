@@ -12,6 +12,8 @@ find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
   gazebo_msgs
   message_generation
+  tf2
+  tf2_ros
 )
 find_package (Eigen3 3.3 REQUIRED NO_MODULE)
 
@@ -37,6 +39,8 @@ catkin_package(
   gazebo_msgs
   geometry_msgs
   message_runtime
+  tf2
+  tf2_ros
   INCLUDE_DIRS include 
 )
 

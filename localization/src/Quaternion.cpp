@@ -316,7 +316,7 @@ float Quaternion::get_roll()
 	/***
 	Get roll from quaternion
 	***/
-	float roll = atan2(2*(s*v_1 + v_2*v_3), 1 - 2*(v_1*v_1 + v_2*v_2));
+	float roll = ceil(atan2(2*(s*v_1 + v_2*v_3), 1 - 2*(v_1*v_1 + v_2*v_2))*100)/100;
 	return roll;
 }
 
@@ -325,7 +325,7 @@ float Quaternion::get_pitch()
 	/***
 	Get pitch from quaternion
 	***/	
-	float sinp = 2*(s*v_2 - v_3*v_1);
+	float sinp = ceil(2*(s*v_2 - v_3*v_1)*100)/100;
 	return asin(sinp);
 }
 
@@ -334,7 +334,7 @@ float Quaternion::get_yaw()
 	/***
 	Get yaw from quaternion
 	***/
-	float yaw = atan2(2*(s*v_3 + v_1*v_2), 1 - 2*(v_2*v_2 + v_3*v_3));
+	float yaw = ceil(atan2(2*(s*v_3 + v_1*v_2), 1 - 2*(v_2*v_2 + v_3*v_3))*100)/100;
 	return yaw;
 }
 

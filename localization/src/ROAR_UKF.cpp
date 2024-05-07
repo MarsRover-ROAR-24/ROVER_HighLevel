@@ -557,7 +557,7 @@ void UKF::imu_callback(Eigen::VectorXd z_measurement, double dt)
     u_t: Measured wheels velocity as input
     ***/
     // Compute the sigma points for given mean and posteriori covariance
-    Eigen::MatrixXd sigmas = sigma_points.calculate_sigma_points(x_post, P_post);
+    Eigen::MatrixXd sigmas = sigma_points.calculate_sigma_points(x_prior, P_prior);
 
         // Pass sigmas into f(x) for wheel odometry
     for (int i = 0; i < sigma_points.num_sigma_points; i++)
@@ -569,7 +569,7 @@ void UKF::imu_callback(Eigen::VectorXd z_measurement, double dt)
         X_sigma.col(i)(8) = sigmas.col(i)(8);
 
         // considern changing this quaternion into UnitQuaternion
-        Quaternion attitude(sigmas.col(i)(0),
+        UnitQuaternion attitude(sigmas.col(i)(0),
         sigmas.col(i)(1),
         sigmas.col(i)(2),
         sigmas.col(i)(3));
@@ -580,6 +580,8 @@ void UKF::imu_callback(Eigen::VectorXd z_measurement, double dt)
         UnitQuaternion uq_omega = UnitQuaternion::omega(sigmas.col(i)(4) * dt,
             sigmas.col(i)(5) * dt,
             sigmas.col(i)(6) * dt);
+        
+        cout << "uq_omega: " << uq_omega.s << " " << uq_omega.v_1 << " " << uq_omega.v_2 << " " << uq_omega.v_3 << endl;
 
         attitude = attitude * uq_omega;
 
@@ -594,9 +596,6 @@ void UKF::imu_callback(Eigen::VectorXd z_measurement, double dt)
         sigma_points.Wm,
         sigma_points.Wc,
         Q);
-    
-    // cout << "weight mean: " << endl << sigma_points.Wm << endl;
-    // cout << "weight cov: " << endl << sigma_points.Wc << endl;
 
     // Save posterior
     x_prior.head(4) = x_hat.head(4);
@@ -606,7 +605,7 @@ void UKF::imu_callback(Eigen::VectorXd z_measurement, double dt)
     P_prior.topLeftCorner(7,7) = P.topLeftCorner(7,7);
   
     // cout << "x_prior: " << x_prior.transpose() << endl;
-    cout << "x_prior: " << endl << x_prior.transpose() << endl;
+    // cout << "x_prior: " << endl << x_prior.transpose() << endl;
     // cout << "P_prior: " << endl << P_prior << endl;
 
     // // Save prior
@@ -713,7 +712,7 @@ void UKF::imu_callback(Eigen::VectorXd z_measurement, double dt)
     // cout << "filter output: " << roll << " " << pitch << " " << yaw << endl;
     // cout << "x_post: " << x_post.transpose() << endl;
 
-
+    // cout << "orientation: " << x_post(0) << " " << x_post(1) << " " << x_post(2) << " " << x_post(3) << endl;
 }
 
 void UKF::gps_callback( Eigen::VectorXd z_measurement, double dt, double lon0, double lat0)

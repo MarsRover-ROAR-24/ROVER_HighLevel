@@ -9,6 +9,9 @@
 #include <std_msgs/Float64MultiArray.h>
 #include "localization/buffer.h"
 #include <gazebo_msgs/ModelStates.h>
+#include <tf2_ros/static_transform_broadcaster.h>
+#include <geometry_msgs/TransformStamped.h>
+#include <Eigen/Geometry>
 
 using namespace std;
 
@@ -23,7 +26,7 @@ const float kappa = 0.1;
 ros::Time encoder_prev_time_stamp;
 ros::Time imu_prev_time_stamp;
 ros::Time gps_prev_time_stamp;
-double dt = 0.001;
+double dt = 0.0;
 bool new_measurement_received = false;
 bool intial_measurment = true;
 double lat0 = 0.0;
@@ -40,6 +43,28 @@ ros::Subscriber ground_truth_sub;
 
 ros::Publisher state_publisher;
 
+void publishTransform(const Eigen::VectorXd& states) {
+    static tf2_ros::StaticTransformBroadcaster static_broadcaster;
+
+    geometry_msgs::TransformStamped transformStamped;
+    transformStamped.header.stamp = ros::Time::now();
+    transformStamped.header.frame_id = "map";  // Fixed frame
+    transformStamped.child_frame_id = "imu_frame";  // Frame of your IMU
+
+    // Fill in transform
+    transformStamped.transform.translation.x = 0.0;  // Adjust as needed
+    transformStamped.transform.translation.y = 0.0;  // Adjust as needed
+    transformStamped.transform.translation.z = 0.0;  // Adjust as needed
+    Eigen::Quaterniond quat(states[0], states[1], states[2], states[3]);
+    quat.normalize(); // Ensure unit magnitude
+    transformStamped.transform.rotation.w = quat.w();
+    transformStamped.transform.rotation.x = quat.x();
+    transformStamped.transform.rotation.y = quat.y();
+    transformStamped.transform.rotation.z = quat.z();
+
+    // Publish transform
+    static_broadcaster.sendTransform(transformStamped);
+}
 void encoderCallback(const sensor_msgs::JointState::ConstPtr& msg)
 {
     std_msgs::Float64MultiArray state_msg;
@@ -114,8 +139,12 @@ void imuCallback(const localization::buffer::ConstPtr& msg)
     // cout << "imu dt: " << dt << endl;
     // cout << "imu_x_posterior: " << ukf.x_post.transpose() << endl;
 
-    state_msg.data = {ukf.x_post[0], ukf.x_post[1], ukf.x_post[2], ukf.x_post[3], ukf.x_post[4], ukf.x_post[5], ukf.x_post[6], ukf.x_post[7], ukf.x_post[8]};
-    state_publisher.publish(state_msg);
+    // state_msg.data = {ukf.x_post[0], ukf.x_post[1], ukf.x_post[2], ukf.x_post[3], ukf.x_post[4], ukf.x_post[5], ukf.x_post[6], ukf.x_post[7], ukf.x_post[8]};
+    // state_publisher.publish(state_msg);
+
+    // Publish the quaternion transform
+    publishTransform(ukf.x_post);
+
 }
 void ground_truth_callback(const gazebo_msgs::ModelStates::ConstPtr msg)
 {
@@ -161,7 +190,6 @@ int main(int argc, char **argv)
         // cout << "x_posterior: " << ukf.x_post.transpose() << endl;
         // cout << "P_posterior: " << ukf.P_post << endl;
         ros::spinOnce();
-        loop_rate.sleep();
     }
 
 	return 0;

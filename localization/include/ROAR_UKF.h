@@ -113,6 +113,8 @@ public:
 
 	double yaw;
 
+	UnitQuaternion uq_omega;
+
 	/*** Constructors ***/
 	UKF();
 	UKF(MerwedSigmaPoints merwed_sigma_points);
