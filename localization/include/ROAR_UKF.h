@@ -8,15 +8,19 @@
 #include <tuple>
 #include <cmath>
 #include "Quaternion.h"
+#include <ros/ros.h>
+#include <tf2_ros/static_transform_broadcaster.h>
+#include <geometry_msgs/TransformStamped.h>
+#include <Eigen/Geometry>
 
 #define PI 3.14159265358979323846
 
 // --- Global Frame Values ---
 // Magnetometer
 // Constants dervied from location: https://www.ngdc.noaa.gov/geomag/calculators/magcalc.shtml#igrfwmm
-#define INCLINATION 45.1251 * (PI/180.0)      // Inclination Angle (rads) 
-#define DECLINATION 4.5242 * (PI/180.0)       // Declination Angle (rads)
-#define B_INTENSITY 44087.6e-09                 // Magnetic Field Intensity (Tesla)
+#define INCLINATION 45.639 * (PI/180.0)      // Inclination Angle (rads) 
+#define DECLINATION 4.5217 * (PI/180.0)      // Declination Angle (rads)
+#define B_INTENSITY 44025.7* 1e-09           // Magnetic Field Intensity (Tesla)
 
 // Merwe Scaled Sigma points for UKF
 class MerwedSigmaPoints

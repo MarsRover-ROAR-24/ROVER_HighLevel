@@ -223,9 +223,9 @@ UKF::UKF(MerwedSigmaPoints merwed_sigma_points)
     Z_sigma = Eigen::MatrixXd::Zero(z_dim, sigma_points.num_sigma_points); // Measurement sigma points
 
     // Initialize noise matrices
-    Q = Eigen::MatrixXd::Identity(x_dim, x_dim) * 0.001;    // Process Noise Matrix //research
+    Q = Eigen::MatrixXd::Identity(x_dim, x_dim) * 1e-08;    // Process Noise Matrix //research
 
-    R = Eigen::MatrixXd::Identity(z_dim, z_dim) * 0.5;      // Measurement Noise Matrix //add noise covariance for each sensor from datasheet
+    R = Eigen::MatrixXd::Identity(z_dim, z_dim) * 0.7;      // Measurement Noise Matrix //add noise covariance for each sensor from datasheet
 
     // Intialize inertial frame quantities
     g0 << 0, 0, 1;                          // Gravitational Acceleration Vector
@@ -557,7 +557,7 @@ void UKF::imu_callback(Eigen::VectorXd z_measurement, double dt)
     u_t: Measured wheels velocity as input
     ***/
     // Compute the sigma points for given mean and posteriori covariance
-    Eigen::MatrixXd sigmas = sigma_points.calculate_sigma_points(x_prior, P_prior);
+    Eigen::MatrixXd sigmas = sigma_points.calculate_sigma_points(x_post, P_post);
 
         // Pass sigmas into f(x) for wheel odometry
     for (int i = 0; i < sigma_points.num_sigma_points; i++)
@@ -573,15 +573,13 @@ void UKF::imu_callback(Eigen::VectorXd z_measurement, double dt)
         sigmas.col(i)(1),
         sigmas.col(i)(2),
         sigmas.col(i)(3));
-        
+
         // Estimated attitude update with incremental rotation update
         // EQN 3.26 & EQN 3.17 (Exponential with skew matrix and delta_t)
         //consider adding noise to the angular velocity and orientation
         UnitQuaternion uq_omega = UnitQuaternion::omega(sigmas.col(i)(4) * dt,
             sigmas.col(i)(5) * dt,
-            sigmas.col(i)(6) * dt);
-        
-        cout << "uq_omega: " << uq_omega.s << " " << uq_omega.v_1 << " " << uq_omega.v_2 << " " << uq_omega.v_3 << endl;
+            sigmas.col(i)(6) * dt);  
 
         attitude = attitude * uq_omega;
 
@@ -598,19 +596,13 @@ void UKF::imu_callback(Eigen::VectorXd z_measurement, double dt)
         Q);
 
     // Save posterior
-    x_prior.head(4) = x_hat.head(4);
+    UnitQuaternion uq(x_hat(0), x_hat(1), x_hat(2), x_hat(3));
+    uq.normalize();
+    x_prior.head(4) = uq.to_quaternion_vector();
     x_prior(4) = z_measurement(0);
     x_prior(5) = z_measurement(1);
     x_prior(6) = z_measurement(2);
     P_prior.topLeftCorner(7,7) = P.topLeftCorner(7,7);
-  
-    // cout << "x_prior: " << x_prior.transpose() << endl;
-    // cout << "x_prior: " << endl << x_prior.transpose() << endl;
-    // cout << "P_prior: " << endl << P_prior << endl;
-
-    // // Save prior
-    // x_prior = x_hat.replicate(1, 1);
-    // P_prior = P.replicate(1, 1);
 
     // Pass the transformed sigmas into measurement function
     for (int i = 0; i < sigma_points.num_sigma_points; i++)

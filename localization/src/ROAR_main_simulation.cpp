@@ -26,7 +26,7 @@ const float kappa = 0.1;
 ros::Time encoder_prev_time_stamp;
 ros::Time imu_prev_time_stamp;
 ros::Time gps_prev_time_stamp;
-double dt = 0.0;
+double dt = 0.01;
 bool new_measurement_received = false;
 bool intial_measurment = true;
 double lat0 = 0.0;
@@ -77,7 +77,7 @@ void encoderCallback(const sensor_msgs::JointState::ConstPtr& msg)
         return;
     }
     ros::Time encoder_current_time_stamp = msg->header.stamp;
-    // dt = (encoder_current_time_stamp - encoder_prev_time_stamp).toSec();
+    dt = (encoder_current_time_stamp - encoder_prev_time_stamp).toSec();
 
     for (int i = 0; i < 6; ++i) {
         encoder_measurement[i] = msg->velocity[i];
