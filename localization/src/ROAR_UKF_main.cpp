@@ -4,6 +4,7 @@
 #include <geometry_msgs/Vector3Stamped.h>
 #include <sensor_msgs/Imu.h>
 #include <std_msgs/Int8MultiArray.h>
+#include <roar_msgs/encoders_stamped.h>
 
 using namespace std;
 
@@ -39,7 +40,7 @@ ros::Subscriber gps_sub; // GPS subscriber
 ros::Publisher state_publisher; // State publisher
 
 // Callback function for encoder data
-void encoderCallback(const std_msgs::Int8MultiArray::ConstPtr& msg)
+void encoderCallback(const roar_msgs::encoders_stamped::ConstPtr& msg)
 {
     std_msgs::Float64MultiArray state_msg;
 
@@ -56,7 +57,7 @@ void encoderCallback(const std_msgs::Int8MultiArray::ConstPtr& msg)
 
     // Store encoder measurements
     for (int i = 0; i < 6; ++i) {
-        encoder_measurement[i] = msg->velocity[i];
+        encoder_measurement[i] = msg->data[i];
     }
 
     // Call UKF encoder callback function
