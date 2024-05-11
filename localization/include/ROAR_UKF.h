@@ -146,9 +146,9 @@ public:
 	void update(Eigen::MatrixXd z_measurement);
 
 	/*** Sensors Callbacks ***/
-	void encoder_callback(Eigen::VectorXd w, double dt);
+	void encoder_callback(Eigen::VectorXd w, double dt, double yaw);
 	void imu_callback(Eigen::VectorXd z_measurement, double dt);
-	void gps_callback(Eigen::VectorXd z_measurement, double dt, double lon0, double lat0);
+	void gps_callback(Eigen::VectorXd z_measurement, double lon0, double lat0, double yaw);
 
 };
 #endif

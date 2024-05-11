@@ -92,12 +92,12 @@ void encoderCallback(const sensor_msgs::JointState::ConstPtr& msg)
     state_msg.data = {ukf.x_post[0], ukf.x_post[1], ukf.x_post[2], ukf.x_post[3], ukf.x_post[4], ukf.x_post[5], ukf.x_post[6], ukf.x_post[7], ukf.x_post[8]};
     state_publisher.publish(state_msg);
 }
-void gpsCallback(const sensor_msgs::NavSatFix::ConstPtr& msg)
+void gpsCallback(const geometry_msgs::Vector3Stamped::ConstPtr& msg)
 {
     if (intial_measurment == true)
     {
-        lat0 = msg->latitude;
-        lon0 = msg->longitude;
+        lat0 = msg->vector.x;
+        lon0 = msg->vector.y;
         intial_measurment = false;
     }
     if (encoder_prev_time_stamp.isZero()) 
@@ -106,14 +106,14 @@ void gpsCallback(const sensor_msgs::NavSatFix::ConstPtr& msg)
         return;
     }
     ros::Time gps_current_time_stamp = msg->header.stamp;
-    // dt = (gps_current_time_stamp - gps_prev_time_stamp).toNSec();
+    dt = (gps_current_time_stamp - gps_prev_time_stamp).toSec();
 
-    z_measurement[9] = msg->latitude;
-    z_measurement[10] = msg->longitude;
+    z_measurement[9] = msg->vector.x;
+    z_measurement[10] = msg->vector.y;
+    cout << "gps measurement: " << z_measurement.transpose() << endl;
     ukf.gps_callback(z_measurement, dt, lat0, lon0);
     gps_prev_time_stamp = gps_current_time_stamp;
-    // cout << "gps dt: " << dt << endl;
-    cout << "gps_x_posterior: " << ukf.x_post.transpose() << endl;
+    cout << "gps callback:" << ukf.x_post.transpose() << endl;
 }
 void imuCallback(const localization::buffer::ConstPtr& msg)
 {
@@ -131,16 +131,9 @@ void imuCallback(const localization::buffer::ConstPtr& msg)
     {
         z_measurement[i] = msg->measurements[i];
     }
-    // cout << "imu process" << endl;
-    // cout << "ground_truth : " << ground_truth.transpose() << endl;
-    // cout << "dt: " << dt << endl;
+
     ukf.imu_callback(z_measurement, dt);
     imu_prev_time_stamp = imu_current_time_stamp;
-    // cout << "imu dt: " << dt << endl;
-    // cout << "imu_x_posterior: " << ukf.x_post.transpose() << endl;
-
-    // state_msg.data = {ukf.x_post[0], ukf.x_post[1], ukf.x_post[2], ukf.x_post[3], ukf.x_post[4], ukf.x_post[5], ukf.x_post[6], ukf.x_post[7], ukf.x_post[8]};
-    // state_publisher.publish(state_msg);
 
     // Publish the quaternion transform
     publishTransform(ukf.x_post);
@@ -175,20 +168,14 @@ int main(int argc, char **argv)
     
     imu_sub = nh.subscribe("/imu_readings", 1000, imuCallback);
     // encoder_sub = nh.subscribe("/joint_states", 1000, encoderCallback);
-    // gps_sub = nh.subscribe("/gps", 1000, gpsCallback);
+    gps_sub = nh.subscribe("/GPS", 1000, gpsCallback);
     ground_truth_sub = nh.subscribe("gazebo/model_states", 1000, ground_truth_callback);
-
-    // z_measurement = Eigen::VectorXd::Zero(11);
-    // encoder_measurement = Eigen::VectorXd::Zero(6);
-    // ground_truth = Eigen::VectorXd::Zero(3);
 
     state_publisher = nh.advertise<std_msgs::Float64MultiArray>("/filtered_state", 1000);
     ros::Rate loop_rate(10);
 
     while (ros::ok())
     {
-        // cout << "x_posterior: " << ukf.x_post.transpose() << endl;
-        // cout << "P_posterior: " << ukf.P_post << endl;
         ros::spinOnce();
     }
 

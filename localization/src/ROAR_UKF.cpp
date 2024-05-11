@@ -223,7 +223,7 @@ UKF::UKF(MerwedSigmaPoints merwed_sigma_points)
     Z_sigma = Eigen::MatrixXd::Zero(z_dim, sigma_points.num_sigma_points); // Measurement sigma points
 
     // Initialize noise matrices
-    Q = Eigen::MatrixXd::Identity(x_dim, x_dim) * 1e-08;    // Process Noise Matrix //research
+    Q = Eigen::MatrixXd::Identity(x_dim, x_dim) * 1e-10;    // Process Noise Matrix //research
 
     R = Eigen::MatrixXd::Identity(z_dim, z_dim) * 0.7;      // Measurement Noise Matrix //add noise covariance for each sensor from datasheet
 
@@ -485,7 +485,7 @@ void UKF::update(Eigen::MatrixXd z_measurement)
 	P_post = P.replicate(1, 1); 
 
 }
-void UKF::encoder_callback(Eigen::VectorXd w, double dt)
+void UKF::encoder_callback(Eigen::VectorXd w, double dt, double yaw)
 {
     /***
     Predict with wheel odometry process model
@@ -508,7 +508,6 @@ void UKF::encoder_callback(Eigen::VectorXd w, double dt)
         // Process wheel speeds using Kinematic Model
         ROVER rover;    
         rover.calculate_wheel_change(w, dt);
-        float yaw = atan2(2 * (sigmas.col(i)(0) * sigmas.col(i)(3) + sigmas.col(i)(1) * sigmas.col(i)(2)), (1 - 2 * (sigmas.col(i)(2) * sigmas.col(i)(2) + sigmas.col(i)(3) * sigmas.col(i)(3))));
 
         //position
         // Update x and y positions
@@ -707,7 +706,7 @@ void UKF::imu_callback(Eigen::VectorXd z_measurement, double dt)
     // cout << "orientation: " << x_post(0) << " " << x_post(1) << " " << x_post(2) << " " << x_post(3) << endl;
 }
 
-void UKF::gps_callback( Eigen::VectorXd z_measurement, double dt, double lon0, double lat0)
+void UKF::gps_callback( Eigen::VectorXd z_measurement, double lon0, double lat0, double yaw)
 {
     /***
     Predict with wheel odometry process model
@@ -719,7 +718,6 @@ void UKF::gps_callback( Eigen::VectorXd z_measurement, double dt, double lon0, d
     // Pass sigmas into f(x) for wheel odometry
     for (int i = 0; i < sigma_points.num_sigma_points; i++)
     {
-        float yaw = atan2(2 * (sigmas.col(i)(0) * sigmas.col(i)(3) + sigmas.col(i)(1) * sigmas.col(i)(2)), (1 - 2 * (sigmas.col(i)(2) * sigmas.col(i)(2) + sigmas.col(i)(3) * sigmas.col(i)(3))));
         double lat = lat0 + (180 / PI) * (sigmas.col(i)(7) / 6378137);
         double lon = lon0 + (180 / PI) * (sigmas.col(i)(8) / 6378137) / cos(lat0);
 

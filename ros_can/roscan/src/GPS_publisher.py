@@ -3,12 +3,12 @@ import serial
 import math
 import time
 import rospy
-from std_msgs.msg import Float64MultiArray
+from geometry_msgs.msg import Vector3Stamped
 
 rospy.init_node('GPS_publisher', anonymous=True)
-pub = rospy.Publisher('GPS', Float64MultiArray, queue_size=10)
+pub = rospy.Publisher('sensors/gps', Vector3Stamped, queue_size=10)
 
-gps_msg = Float64MultiArray()
+gps_msg = Vector3Stamped()
 
 def parse_nmea(sentence):
     data = sentence.split(',')
@@ -42,7 +42,9 @@ try:
         line = ser.readline().decode().strip()
         position = parse_nmea(line)
         if position:
-            gps_msg.data = [position[0], position[1]]
+            gps_msg.header.stamp = rospy.Time.now()
+            gps_msg.vector.x = position[0]
+            gps_msg.vector.y = position[1]
             pub.publish(gps_msg)
             print("Latitude: %f, Longitude: %f" % position)
 
