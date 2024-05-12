@@ -97,6 +97,7 @@ void gpsCallback(const geometry_msgs::Vector3Stamped::ConstPtr& msg)
 void imuCallback(const sensor_msgs::Imu::ConstPtr& msg)
 {
     yaw = msg->orientation.z;
+    yaw = yaw * PI / 180.0;
 }
 
 // Main function
