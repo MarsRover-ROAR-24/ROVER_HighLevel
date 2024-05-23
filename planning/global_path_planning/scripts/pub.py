@@ -4,7 +4,7 @@ import rospy
 from turtlebot3_msgs.msg import wp_list
 
 # File path
-file_path = "/home/seif/GP_ws/src/global_path_planning/scripts/data.txt"
+file_path = "/home/shams/turtlebot_ws/src/global_path_planning/scripts/data.txt"
 way_points_list=[]
 
 

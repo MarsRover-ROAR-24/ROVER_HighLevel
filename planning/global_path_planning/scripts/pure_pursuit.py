@@ -64,7 +64,7 @@ class Turtle:
         def tuple_list_callback(self, msg):
                 received_tuples = []
 
-                # rospy.loginfo("Received a list of tuples:")
+                rospy.loginfo("Received a list of tuples:")
 
                 for i in range(msg.length):
                         tuple_data = (msg.a[i], msg.b[i])

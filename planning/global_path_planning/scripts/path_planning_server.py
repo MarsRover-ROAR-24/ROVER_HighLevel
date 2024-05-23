@@ -22,15 +22,17 @@ def make_plan(req):
   # side of each grid map square in meters
   resolution = 0.05
   # origin of grid map
-  origin = [-12.824999,-12.824999, 0]  # here we change the origin according to map.yaml file to make the robot have the same start when picking a point.
+  origin = [-10.0000, -10.0000, 0.000000]  # here we change the origin according to map.yaml file to make the robot have the same start when picking a point.
 
   viz = GridViz(costmap, resolution, origin, start_index, goal_index, width)
+  # viz = GridViz( resolution, origin)
 
   # time statistics
   start_time = rospy.Time.now()
 
   # calculate the shortes path
   path = algorithm(start_index, goal_index, width, height, costmap, resolution, origin, viz)
+  # path = algorithm(resolution, origin, viz)
 
   if not path:
     rospy.logwarn("No path returned by the path algorithm")
