@@ -34,7 +34,7 @@ def parse_nmea(sentence):
     return None
 
 # Replace '/dev/ttyUSB0' with the appropriate serial port
-ser = serial.Serial('/dev/ttyUSB1', 9600)  # Adjust baud rate if necessary
+ser = serial.Serial('/dev/ttyUSB0', 9600)  # Adjust baud rate if necessary
 
 try:
     while True:
@@ -46,7 +46,6 @@ try:
             gps_msg.vector.x = position[0]
             gps_msg.vector.y = position[1]
             pub.publish(gps_msg)
-            print("Latitude: %f, Longitude: %f" % position)
 
 except KeyboardInterrupt:
     ser.close()
