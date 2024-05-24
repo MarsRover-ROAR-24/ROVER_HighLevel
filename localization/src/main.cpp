@@ -3,7 +3,6 @@
 #include <ros/ros.h>
 #include <geometry_msgs/Vector3Stamped.h>
 #include <sensor_msgs/Imu.h>
-#include <std_msgs/Int8MultiArray.h>
 #include <roar_msgs/encoders_stamped.h>
 
 using namespace std;
