@@ -47,8 +47,9 @@ class Control:
         self.error_values = []
 
         self.waypoints = []
-        self.x_goal_point = 0.0
-        self.y_goal_point = 0.0
+        # self.x_goal_point = 0.0
+        # self.y_goal_point = 0.0
+        self.waypoints_plot = None
 
         # Setup matplotlib for plotting
         self.fig, (self.ax1, self.ax2) = plt.subplots(1, 2, figsize=(12, 6))
@@ -64,8 +65,13 @@ class Control:
         self.waypoints_x = []
         self.waypoints_y = []
         self.waypoints_plot, = self.ax1.plot([], [], 'b--', label='Waypoints')
+        self.robot_position_plot, = self.ax1.plot([], [], 'r^', label='Robot Position', markersize=6)  # Thinner shape
+        # Add a plot for the robot's path
+        self.past_positions_x = []
+        self.past_positions_y = []
+        self.robot_path_plot, = self.ax1.plot([], [], 'r-', label='Robot Path')  # Robot path plot
         self.ax1.legend()
-
+    
         # Plot for error vs. time
         self.ax2.set_xlabel('Time')
         self.ax2.set_ylabel('Error')
@@ -91,24 +97,24 @@ class Control:
         self.robot_theta = yaw
 
     def pidController(self):
+        e= 0.0
         lookahead_point = self.find_lookahead_point((self.currentx, self.currenty))
-
-        if lookahead_point is not None:
+        goal_point = self.waypoints[-1]
+        distance_to_goal = np.linalg.norm(np.array((self.currentx, self.currenty)) - np.array(goal_point))
+        print("Goal point:",goal_point)
+        if distance_to_goal > 0.01:
             e = math.hypot(lookahead_point[0] - self.currentx, lookahead_point[1] - self.currenty)
             print("Selected Lookahead Point:", lookahead_point)
-        else:
-            # If no lookahead point found, set the error to the distance between the current position and the goal
-            e = math.hypot(self.x_goal_point - self.currentx, self.y_goal_point - self.currenty)
-
-        e_past = 0
-
-        if e > 0.1:
-            self.integral += e * self.dt
-            derivative = (e - e_past) / self.dt
-            action = self.kp * e + self.ki * self.integral + self.kd * derivative
-            self.throttle_output = self.max_velocity * math.tanh(action)
-            e_past = e
-            print('Error = ', e)
+            e_past = 0
+            if e > 0.1:
+                self.integral += e * self.dt
+                derivative = (e - e_past) / self.dt
+                action = self.kp * e + self.ki * self.integral + self.kd * derivative
+                self.throttle_output = self.max_velocity * math.tanh(action)
+                e_past = e
+                print('Error = ', e)
+            else:
+                self.throttle_output = 0.0     
         else:
             self.throttle_output = 0.0
 
@@ -139,8 +145,6 @@ class Control:
                 if distance_to_robot < self.dist_ld and i > max_index:
                         candidate_lookahead_points = [waypoint]
                         max_index = i
-                elif distance_to_robot < self.dist_ld and i == max_index:
-                        candidate_lookahead_points.append(waypoint)
 
         if not candidate_lookahead_points:
                 return None  # No valid lookahead point found
@@ -170,7 +174,10 @@ class Control:
             Vr = min(max(Vr, -1.57), 1.57)
             Vl = min(max(Vl, -1.57), 1.57)
 
-            print('Right: ', Vr, ' Left: ', Vl)
+            Vr_mapped = int(((Vr + 1.57) / (1.57 * 2)) * 127 + 0.5) 
+            Vl_mapped = int(((Vl + 1.57) / (1.57 * 2)) * 127 + 0.5)
+            print('Right: ', Vr, ' Mapped Right:', Vr_mapped, ' Left: ', Vl, ' Mapped Left:', Vl_mapped)
+
 
             self.velocitylm_publisher.publish(Vl)
             self.velocityrm_publisher.publish(Vr)
@@ -185,8 +192,15 @@ class Control:
             plt.pause(0.001)
 
     def plot_rover_position(self):
-        self.ax1.plot(self.currentx, self.currenty, 'ro')  # Plot current position in red
-
+        # self.ax1.plot(self.currentx, self.currenty, 'ro')  # Plot current position in red
+        # self.robot_position_plot.set_data(self.currentx, self.currenty)  # Update the robot position plot
+    # Append the current position to the past positions
+        self.past_positions_x.append(self.currentx)
+        self.past_positions_y.append(self.currenty)
+        
+        # Update the robot path plot
+        self.robot_path_plot.set_data(self.past_positions_x, self.past_positions_y)
+        self.robot_position_plot.set_data(self.currentx, self.currenty)  # Update the current position plot
     def update_waypoints_plot(self):
         self.waypoints_x, self.waypoints_y = zip(*self.waypoints)
         self.waypoints_plot.set_data(self.waypoints_x, self.waypoints_y)

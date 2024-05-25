@@ -4,7 +4,6 @@ import rospy
 from std_msgs.msg import Bool
 from nav_msgs.msg import Path
 from visualization_msgs.msg import Marker
-from turtlebot3_msgs.msg import wp_list 
 
 class PathSelector:
     def __init__(self):
@@ -12,8 +11,8 @@ class PathSelector:
         rospy.init_node('path_selector_node', anonymous=True)
 
         # Define subscribers
-        self.global_path_sub = rospy.Subscriber('/global_path', wp_list, self.global_path_callback)
-        self.local_path_sub = rospy.Subscriber('/local_path', wp_list, self.local_path_callback)
+        self.global_path_sub = rospy.Subscriber('/global_path', Path, self.global_path_callback)
+        self.local_path_sub = rospy.Subscriber('/local_path', Path, self.local_path_callback)
         self.obstacle_flag_sub = rospy.Subscriber('/obstacle_flag', Bool, self.obstacle_flag_callback)
 
         # Define publisher

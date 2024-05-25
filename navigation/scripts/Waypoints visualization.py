@@ -179,8 +179,6 @@ waypoints = [
     (9, 9),(9,8.5),(9,8)
 ]
 
-
-
 # Extract x and y coordinates of waypoints
 x_coords = [point[0] for point in waypoints]
 y_coords = [point[1] for point in waypoints]
