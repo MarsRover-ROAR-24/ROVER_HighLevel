@@ -25,7 +25,7 @@ class Control:
         self.pose_subscriber = rospy.Subscriber('/filtered_state', Float64MultiArray, self.update_pose)
         self.yaw_subscriber = rospy.Subscriber('/gazebo/model_states', ModelStates, self.update_yaw)
 
-        # self.path_subscriber = rospy.Subscriber('tuple_list_topic', wp_list, self.tuple_list_callback)  #===>
+        self.path_subscriber = rospy.Subscriber('tuple_list_topic', wp_list, self.tuple_list_callback)  #===>
 
         self.pose = Float64MultiArray()
         self.yaw = ModelStates()
@@ -35,7 +35,7 @@ class Control:
         self.kp = 0.5
         self.ki = 0.5
         self.kd = 0.0
-        self.dist_ld = 0.3
+        self.dist_ld = 0.5
 
         self.dt = 0.1
         self.currentx = 0.0
@@ -48,183 +48,7 @@ class Control:
         self.time_values = []
         self.error_values = []
 
-        # self.waypoints = []
-        self.waypoints = [
-                                        (0, 0),
-                                        (0.1, 0.05),
-                                        (0.2, 0.1),
-                                        (0.3, 0.15),
-                                        (0.4, 0.2),
-                                        (0.5, 0.25),(0.5,0.5),(0.75,0.75),
-                                        (0.5, 1),
-                                        (0.6, 1.2),
-                                        (0.7, 1.4),
-                                        (0.8, 1.6),
-                                        (0.9, 1.8),
-                                        (1, 2),
-                                        (1.05, 2.05),
-                                        (1.1, 2.1),
-                                        (1.15, 2.15),
-                                        (1.2, 2.2),
-                                        (1.25, 2.25),
-                                        (1.3, 2.3),
-                                        (1.35, 2.35),
-                                        (1.4, 2.4),
-                                        (1.45, 2.45),
-                                        (1.5, 2.5),
-                                        (1.55, 2.55),
-                                        (1.6, 2.6),
-                                        (1.65, 2.65),
-                                        (1.7, 2.7),
-                                        (1.75, 2.75),
-                                        (1.8, 2.8),
-                                        (1.85, 2.85),
-                                        (1.9, 2.9),
-                                        (1.95, 2.95),
-                                        (2, 3),
-                                        (2.05, 3.05),
-                                        (2.1, 3.1),
-                                        (2.15, 3.15),
-                                        (2.2, 3.2),
-                                        (2.25, 3.25),
-                                        (2.3, 3.3),
-                                        (2.35, 3.35),
-                                        (2.4, 3.4),
-                                        (2.45, 3.45),
-                                        (2.5, 3.5),
-                                        (2.55, 3.55),
-                                        (2.6, 3.6),
-                                        (2.65, 3.65),
-                                        (2.7, 3.7),
-                                        (2.75, 3.75),
-                                        (2.8, 3.8),
-                                        (2.85, 3.85),
-                                        (2.9, 3.9),
-                                        (2.95, 3.95),
-                                        (3, 4),
-                                        (3.05, 4.05),
-                                        (3.1, 4.1),
-                                        (3.15, 4.15),
-                                        (3.2, 4.2),
-                                        (3.25, 4.25),
-                                        (3.3, 4.3),
-                                        (3.35, 4.35),
-                                        (3.4, 4.4),
-                                        (3.45, 4.45),
-                                        (3.5, 4.5),
-                                        (3.55, 4.55),
-                                        (3.6, 4.6),
-                                        (3.65, 4.65),
-                                        (3.7, 4.7),
-                                        (3.75, 4.75),
-                                        (3.8, 4.8),
-                                        (3.85, 4.85),
-                                        (3.9, 4.9),
-                                        (3.95, 4.95),
-                                        (4, 5),
-                                        (4.05, 5.05),
-                                        (4.1, 5.1),
-                                        (4.15, 5.15),
-                                        (4.2, 5.2),
-                                        (4.25, 5.25),
-                                        (4.3, 5.3),
-                                        (4.35, 5.35),
-                                        (4.4, 5.4),
-                                        (4.45, 5.45),
-                                        (4.5, 5.5),
-                                        (4.55, 5.55),
-                                        (4.6, 5.6),
-                                        (4.65, 5.65),
-                                        (4.7, 5.7),
-                                        (4.75, 5.75),
-                                        (4.8, 5.8),
-                                        (4.85, 5.85),
-                                        (4.9, 5.9),
-                                        (4.95, 5.95),
-                                        (5, 6),
-                                        (5.05, 6.05),
-                                        (5.1, 6.1),
-                                        (5.15, 6.15),
-                                        (5.2, 6.2),
-                                        (5.25, 6.25),
-                                        (5.3, 6.3),
-                                        (5.35, 6.35),
-                                        (5.4, 6.4),
-                                        (5.45, 6.45),
-                                        (5.5, 6.5),
-                                        (5.55, 6.55),
-                                        (5.6, 6.6),
-                                        (5.65, 6.65),
-                                        (5.7, 6.7),
-                                        (5.75, 6.75),
-                                        (5.8, 6.8),
-                                        (5.85, 6.85),
-                                        (5.9, 6.9),
-                                        (5.95, 6.95),
-                                        (6, 7),
-                                        (6.05, 7.05),
-                                        (6.1, 7.1),
-                                        (6.15, 7.15),
-                                        (6.2, 7.2),
-                                        (6.25, 7.25),
-                                        (6.3, 7.3),
-                                        (6.35, 7.35),
-                                        (6.4, 7.4),
-                                        (6.45, 7.45),
-                                        (6.5, 7.5),
-                                        (6.55, 7.55),
-                                        (6.6, 7.6),
-                                        (6.65, 7.65),
-                                        (6.7, 7.7),
-                                        (6.75, 7.75),
-                                        (6.8, 7.8),
-                                        (6.85, 7.85),
-                                        (6.9, 7.9),
-                                        (6.95, 7.95),
-                                        (7, 8),
-                                        (7.05, 8.05),
-                                        (7.1, 8.1),
-                                        (7.15, 8.15),
-                                        (7.2, 8.2),
-                                        (7.25, 8.25),
-                                        (7.3, 8.3),
-                                        (7.35, 8.35),
-                                        (7.4, 8.4),
-                                        (7.45, 8.45),
-                                        (7.5, 8.5),
-                                        (7.55, 8.55),
-                                        (7.6, 8.6),
-                                        (7.65, 8.65),
-                                        (7.7, 8.7),
-                                        (7.75, 8.75),
-                                        (7.8, 8.8),
-                                        (7.85, 8.85),
-                                        (7.9, 8.9),
-                                        (7.95, 8.95),
-                                        (8, 9),
-                                        (8.05, 9.05),
-                                        (8.1, 9.1),
-                                        (8.15, 9.15),
-                                        (8.2, 9.2),
-                                        (8.25, 9.25),
-                                        (8.3, 9.3),
-                                        (8.35, 9.35),
-                                        (8.4, 9.4),
-                                        (8.45, 9.45),
-                                        (8.5, 9.5),
-                                        (8.55, 9.55),
-                                        (8.6, 9.6),
-                                        (8.65, 9.65),
-                                        (8.7, 9.7),
-                                        (8.75, 9.75),
-                                        (8.8, 9.8),
-                                        (8.85, 9.85),
-                                        (8.9, 9.9),
-                                        (8.95, 9.95),
-                                        (9,9.9),
-                                        (9, 9.85),(9,9.5),
-                                        (9, 9),(9,8.5),(9,8)
-                                        ]
+        self.waypoints = []
         # self.x_goal_point = 0.0
         # self.y_goal_point = 0.0
         self.waypoints_plot = None
@@ -269,6 +93,8 @@ class Control:
         self.pose = data
         self.currentx = self.pose.data[7]
         self.currenty = self.pose.data[8]
+       
+
 
     def update_yaw(self, data:ModelStates):
         self.yaw = data
@@ -382,9 +208,17 @@ class Control:
         # Update the robot path plot
         self.robot_path_plot.set_data(self.past_positions_x, self.past_positions_y)
         self.robot_position_plot.set_data(self.currentx, self.currenty)  # Update the current position plot
+    
     def update_waypoints_plot(self):
-        self.waypoints_x, self.waypoints_y = zip(*self.waypoints)
+        if self.waypoints:
+            self.waypoints_x, self.waypoints_y = zip(*self.waypoints)
+        else:
+            self.waypoints_x, self.waypoints_y = [], []
         self.waypoints_plot.set_data(self.waypoints_x, self.waypoints_y)
+        self.ax1.relim()
+        self.ax1.autoscale_view()
+        self.fig.canvas.draw()
+        self.fig.canvas.flush_events()
 
 if __name__ == '__main__':
     try:

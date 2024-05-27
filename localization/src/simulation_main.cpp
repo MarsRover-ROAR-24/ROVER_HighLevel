@@ -72,7 +72,6 @@ void encoderCallback(const sensor_msgs::JointState::ConstPtr& msg)
     }
     ros::Time encoder_current_time_stamp = msg->header.stamp;
     dt = (encoder_current_time_stamp - encoder_prev_time_stamp).toSec();
-    cout << "dt: " << dt << "\n";
 
     for (int i = 0; i < 6; ++i) 
     {
@@ -108,10 +107,11 @@ void gpsCallback(const sensor_msgs::NavSatFix::ConstPtr& msg)
     ukf.gps_callback(z_measurement, lon0, lat0);
     gps_prev_time_stamp = gps_current_time_stamp;
 }
-void imuCallback(const sensor_msgs::Imu::ConstPtr& msg)
+void imuCallback(const gazebo_msgs::ModelStates::ConstPtr& msg)
 {
-   Quaternion q(msg->orientation.w, msg->orientation.x, msg->orientation.y, msg->orientation.z);
-    yaw = q.get_yaw() + 90.0;
+   Quaternion q(msg->pose[1].orientation.w, msg->pose[1].orientation.x, msg->pose[1].orientation.y, msg->pose[1].orientation.z);
+    yaw = q.get_yaw() + 1.57;
+    cout << yaw << endl;
 }
 
 int main(int argc, char **argv) 
@@ -119,7 +119,7 @@ int main(int argc, char **argv)
     ros::init(argc, argv, "ukf_localization");
     ros::NodeHandle nh;
     
-    imu_sub = nh.subscribe("/imu", 1000, imuCallback);
+    imu_sub = nh.subscribe("/gazebo/model_states", 1000, imuCallback);
     encoder_sub = nh.subscribe("/joint_states", 1000, encoderCallback);
     gps_sub = nh.subscribe("/gps", 1000, gpsCallback);
 
