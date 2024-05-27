@@ -10,8 +10,8 @@ ROVER::ROVER()
     Kinematic_model_parameters = Eigen::MatrixXd::Zero(2, 6);
     rover_speeds = Eigen::VectorXd::Zero(2);
     
-    Kinematic_model_parameters << 0.04, 0.04, 0.04, 0.04, 0.04, 0.04,
-                                 -0.097, -0.097, -0.097, 0.097, 0.097, 0.097;
+    Kinematic_model_parameters << 0.02075, 0.02075, 0.02075, 0.02075, 0.02075, 0.02075,
+                                 -0.0502, -0.0502, -0.0502, 0.0502, 0.0502, 0.0502;
 
 }
 void ROVER::calculate_wheel_change(Eigen::VectorXd w, double dt)
@@ -223,9 +223,9 @@ UKF::UKF(MerwedSigmaPoints merwed_sigma_points)
     Z_sigma = Eigen::MatrixXd::Zero(z_dim, sigma_points.num_sigma_points); // Measurement sigma points
 
     // Initialize noise matrices
-    Q = Eigen::MatrixXd::Identity(x_dim, x_dim) * 1e-10;    // Process Noise Matrix //research
+    Q = Eigen::MatrixXd::Identity(x_dim, x_dim) * 0.0;    // Process Noise Matrix //research
 
-    R = Eigen::MatrixXd::Identity(z_dim, z_dim) * 0.7;      // Measurement Noise Matrix //add noise covariance for each sensor from datasheet
+    R = Eigen::MatrixXd::Identity(z_dim, z_dim) * 0.5;      // Measurement Noise Matrix //add noise covariance for each sensor from datasheet
 
     // Intialize inertial frame quantities
     g0 << 0, 0, 1;                          // Gravitational Acceleration Vector

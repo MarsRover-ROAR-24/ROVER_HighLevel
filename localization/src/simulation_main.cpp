@@ -6,6 +6,7 @@
 #include <gazebo_msgs/ModelStates.h>
 #include <tf2_ros/static_transform_broadcaster.h>
 #include <geometry_msgs/TransformStamped.h>
+#include <std_msgs/Float64MultiArray.h>
 
 using namespace std;
 
@@ -71,6 +72,7 @@ void encoderCallback(const sensor_msgs::JointState::ConstPtr& msg)
     }
     ros::Time encoder_current_time_stamp = msg->header.stamp;
     dt = (encoder_current_time_stamp - encoder_prev_time_stamp).toSec();
+    cout << "dt: " << dt << "\n";
 
     for (int i = 0; i < 6; ++i) 
     {
@@ -85,6 +87,8 @@ void encoderCallback(const sensor_msgs::JointState::ConstPtr& msg)
 }
 void gpsCallback(const sensor_msgs::NavSatFix::ConstPtr& msg)
 {
+    std_msgs::Float64MultiArray state_msg;
+
     if (intial_measurment == true)
     {
         lat0 = msg->latitude;
@@ -107,7 +111,7 @@ void gpsCallback(const sensor_msgs::NavSatFix::ConstPtr& msg)
 void imuCallback(const sensor_msgs::Imu::ConstPtr& msg)
 {
    Quaternion q(msg->orientation.w, msg->orientation.x, msg->orientation.y, msg->orientation.z);
-    yaw = q.get_yaw();
+    yaw = q.get_yaw() + 90.0;
 }
 
 int main(int argc, char **argv) 
