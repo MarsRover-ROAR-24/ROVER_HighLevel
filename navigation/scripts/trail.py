@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import math
 import rospy
-from std_msgs.msg import String, Float64
+from std_msgs.msg import String, Float64, Float64MultiArray
 from geometry_msgs.msg import Twist, Pose
 from nav_msgs.msg import Odometry
 from gazebo_msgs.msg import ModelStates, LinkStates
@@ -22,11 +22,13 @@ class Control:
         self.velocityrr_publisher = rospy.Publisher('/wheel_rhs_rear_velocity_controller/command', Float64, queue_size=10)
         self.velocitylm_publisher = rospy.Publisher('/wheel_lhs_mid_velocity_controller/command', Float64, queue_size=10)
         self.velocityrm_publisher = rospy.Publisher('/wheel_rhs_mid_velocity_controller/command', Float64, queue_size=10)
-        self.pose_subscriber = rospy.Subscriber('/gazebo/model_states', ModelStates, self.update_pose)
+        self.pose_subscriber = rospy.Subscriber('/filtered_state', Float64MultiArray, self.update_pose)
+        self.yaw_subscriber = rospy.Subscriber('/gazebo/model_states', ModelStates, self.update_yaw)
 
         self.path_subscriber = rospy.Subscriber('tuple_list_topic', wp_list, self.tuple_list_callback)  #===>
 
-        self.pose = ModelStates()
+        self.pose = Float64MultiArray()
+        self.yaw = ModelStates()
         self.throttle_output=Float64()
 
         self.rate = rospy.Rate(10)
@@ -87,10 +89,13 @@ class Control:
         self.waypoints.reverse()
         self.update_waypoints_plot()
 
-    def update_pose(self, data:ModelStates):
+    def update_pose(self, data:Float64MultiArray):
         self.pose = data
-        self.currentx = self.pose.pose[1].position.x 
-        self.currenty = self.pose.pose[1].position.y
+        self.currentx = self.pose.data[7]
+        self.currenty = self.pose.data[8]
+
+    def upate_yaw(self, data:ModelStates):
+        self.yaw = data
         orientation = self.pose.pose[1].orientation
         orientation_list = [orientation.x, orientation.y, orientation.z, orientation.w]
         _, _, yaw = euler_from_quaternion(orientation_list)
@@ -101,7 +106,7 @@ class Control:
         lookahead_point = self.find_lookahead_point((self.currentx, self.currenty))
         goal_point = self.waypoints[-1]
         distance_to_goal = np.linalg.norm(np.array((self.currentx, self.currenty)) - np.array(goal_point))
-        print("Goal point:",goal_point)
+        # print("Goal point:",goal_point)
         if distance_to_goal > 0.01:
             e = math.hypot(lookahead_point[0] - self.currentx, lookahead_point[1] - self.currenty)
             print("Selected Lookahead Point:", lookahead_point)
