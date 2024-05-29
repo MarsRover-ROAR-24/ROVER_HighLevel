@@ -54,8 +54,8 @@ class Control:
         self.waypoints_plot = None
 
         # Setup matplotlib for plotting
-        self.fig, (self.ax1, self.ax2) = plt.subplots(1, 2, figsize=(12, 6))
-        # self.fig, (self.ax1) = plt.subplots(1, figsize=(6, 6))
+        # self.fig, (self.ax1, self.ax2) = plt.subplots(1, 2, figsize=(12, 6))
+        self.fig, (self.ax1) = plt.subplots(1, figsize=(6, 6))
 
 
         # Plot for waypoints
@@ -75,10 +75,10 @@ class Control:
         self.ax1.legend()
     
         # Plot for error vs. time
-        self.ax2.set_xlabel('Time')
-        self.ax2.set_ylabel('Error')
-        self.line, = self.ax2.plot([], [], label='Error vs. Time')
-        self.ax2.legend()
+        # self.ax2.set_xlabel('Time')
+        # self.ax2.set_ylabel('Error')
+        # self.line, = self.ax2.plot([], [], label='Error vs. Time')
+        # self.ax2.legend()
 
         plt.tight_layout()
 
@@ -133,10 +133,10 @@ class Control:
         rospy.loginfo('Error = %f', e)
 
         # Plot error vs. time
-        self.line.set_xdata(self.time_values)
-        self.line.set_ydata(self.error_values)
-        self.ax2.relim()
-        self.ax2.autoscale_view()
+        # self.line.set_xdata(self.time_values)
+        # self.line.set_ydata(self.error_values)
+        # self.ax2.relim()
+        # self.ax2.autoscale_view()
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
 
