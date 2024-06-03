@@ -13,7 +13,11 @@ class LocalPathPublisher:
         self.path_pub = rospy.Publisher('/local_path', Path, queue_size=10)
 
         # Logical waypoints for the local path (list of tuples)
-        self.waypoints = [(5, 4), (6, 4), (7, 4), (8, 5)]  # A detour around the obstacle
+        self.waypoints = [(0.5, 4.5),
+        (3.0, 5.0),
+        (4.0, 9.5),
+        (6.0, 8.5),
+        (8.0, 6.0)]  # A detour around the obstacle
 
         # Set a timer to publish the path at regular intervals
         self.publish_interval = rospy.Duration(1)  # 1 second

@@ -24,6 +24,8 @@ class PathSelector:
         self.local_path = None
         self.obstacle_flag = False
 
+        self.rate = rospy.Rate(10)
+
     def global_path_callback(self, msg):
         self.global_path = msg
         self.visualize_path(msg, "global_path")
@@ -63,8 +65,8 @@ class PathSelector:
         self.visualization_pub.publish(marker)
 
     def run(self):
-        rospy.spin()
-
+        while not rospy.is_shutdown():
+            self.rate.sleep()
 if __name__ == '__main__':
     try:
         path_selector = PathSelector()

@@ -13,7 +13,7 @@ class ObstacleFlagPublisher:
 
         # Timer to change the flag status
         self.flag = False
-        self.timer = rospy.Timer(rospy.Duration(5), self.change_flag_status)  # Change every 5 seconds
+        self.timer = rospy.Timer(rospy.Duration(10), self.change_flag_status)  # Change every 5 seconds
 
     def change_flag_status(self, event):
         self.flag = not self.flag

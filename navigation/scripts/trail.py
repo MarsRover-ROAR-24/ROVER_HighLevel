@@ -24,7 +24,7 @@ class Control:
         self.velocityrm_publisher = rospy.Publisher('/wheel_rhs_mid_velocity_controller/command', Float64, queue_size=10)
         self.pose_subscriber = rospy.Subscriber('/gazebo/model_states', ModelStates, self.update_pose)
 
-        self.path_subscriber = rospy.Subscriber('tuple_list_topic', wp_list, self.tuple_list_callback)  #===>
+        self.path_subscriber = rospy.Subscriber('tuple_list_topic', wp_list, self.tuple_list_callback)  
 
         self.pose = ModelStates()
         self.throttle_output=Float64()
@@ -52,31 +52,22 @@ class Control:
         self.waypoints_plot = None
 
         # Setup matplotlib for plotting
-        self.fig, (self.ax1, self.ax2) = plt.subplots(1, 2, figsize=(12, 6))
-        # self.fig, (self.ax1) = plt.subplots(1, figsize=(6, 6))
-
-
+        self.fig, self.ax1 = plt.subplots(1, 1, figsize=(6, 6))  # Single plot with one axis
         # Plot for waypoints
         self.ax1.set_xlabel('X')
         self.ax1.set_ylabel('Y')
-        self.ax1.set_title('Waypoints')
-        self.ax1.set_xlim(-10, 1)  # Set x-axis limits from -10 to 10
-        self.ax1.set_ylim(-2.5, 2.5)  # Set y-axis limits from -10 to 10
+        self.ax1.set_title('Waypoints and Robot Path')
+        self.ax1.set_xlim(-10, 1)  # Set x-axis limits from -10 to 1
+        self.ax1.set_ylim(-2.5, 2.5)  # Set y-axis limits from -2.5 to 2.5
         self.waypoints_x = []
         self.waypoints_y = []
         self.waypoints_plot, = self.ax1.plot([], [], 'b--', label='Waypoints')
-        self.robot_position_plot, = self.ax1.plot([], [], 'r^', label='Robot Position', markersize=6)  # Thinner shape
+        self.robot_position_plot, = self.ax1.plot([], [], 'r^', label='Robot Position', markersize=6)
         # Add a plot for the robot's path
         self.past_positions_x = []
         self.past_positions_y = []
         self.robot_path_plot, = self.ax1.plot([], [], 'r-', label='Robot Path')  # Robot path plot
         self.ax1.legend()
-    
-        # Plot for error vs. time
-        self.ax2.set_xlabel('Time')
-        self.ax2.set_ylabel('Error')
-        self.line, = self.ax2.plot([], [], label='Error vs. Time')
-        self.ax2.legend()
 
         plt.tight_layout()
 
@@ -95,13 +86,25 @@ class Control:
         orientation_list = [orientation.x, orientation.y, orientation.z, orientation.w]
         _, _, yaw = euler_from_quaternion(orientation_list)
         self.robot_theta = yaw
+    
+    def map_velocity(self,velocity):
+        # Clamping the value to be within the range -1.57 to 1.57
+        velocity = min(max(velocity, -1.57), 1.57)
+        
+        if velocity < 0:
+            # Mapping negative values from -1.57 to 0 to the range 0 to 55
+            return int(((velocity + 1.57) / 1.57) * 55)
+        else:
+            # Mapping positive values from 0 to 1.57 to the range 75 to 127
+            return int((velocity / 1.57) * 52 + 75)
+
 
     def pidController(self):
         e= 0.0
         lookahead_point = self.find_lookahead_point((self.currentx, self.currenty))
         goal_point = self.waypoints[-1]
         distance_to_goal = np.linalg.norm(np.array((self.currentx, self.currenty)) - np.array(goal_point))
-        print("Goal point:",goal_point)
+        # print("Goal point:",goal_point)
         if distance_to_goal > 0.01:
             e = math.hypot(lookahead_point[0] - self.currentx, lookahead_point[1] - self.currenty)
             print("Selected Lookahead Point:", lookahead_point)
@@ -119,19 +122,19 @@ class Control:
             self.throttle_output = 0.0
 
         # Append time and error values for plotting
-        self.time_values.append(rospy.get_time())
-        self.error_values.append(e)
+        # self.time_values.append(rospy.get_time())
+        # self.error_values.append(e)
 
         # Publish to other wheel controllers
         rospy.loginfo('Error = %f', e)
 
         # Plot error vs. time
-        self.line.set_xdata(self.time_values)
-        self.line.set_ydata(self.error_values)
-        self.ax2.relim()
-        self.ax2.autoscale_view()
-        self.fig.canvas.draw()
-        self.fig.canvas.flush_events()
+        # self.line.set_xdata(self.time_values)
+        # self.line.set_ydata(self.error_values)
+        # self.ax2.relim()
+        # self.ax2.autoscale_view()
+        # self.fig.canvas.draw()
+        # self.fig.canvas.flush_events()
 
         return self.throttle_output
     
@@ -174,8 +177,8 @@ class Control:
             Vr = min(max(Vr, -1.57), 1.57)
             Vl = min(max(Vl, -1.57), 1.57)
 
-            Vr_mapped = int(((Vr + 1.57) / (1.57 * 2)) * 127 + 0.5) 
-            Vl_mapped = int(((Vl + 1.57) / (1.57 * 2)) * 127 + 0.5)
+            Vr_mapped = self.map_velocity(Vr)
+            Vl_mapped = self.map_velocity(Vl)
             print('Right: ', Vr, ' Mapped Right:', Vr_mapped, ' Left: ', Vl, ' Mapped Left:', Vl_mapped)
 
 
@@ -192,15 +195,14 @@ class Control:
             plt.pause(0.001)
 
     def plot_rover_position(self):
-        # self.ax1.plot(self.currentx, self.currenty, 'ro')  # Plot current position in red
-        # self.robot_position_plot.set_data(self.currentx, self.currenty)  # Update the robot position plot
-    # Append the current position to the past positions
+        # Append the current position to the past positions
         self.past_positions_x.append(self.currentx)
         self.past_positions_y.append(self.currenty)
-        
+
         # Update the robot path plot
         self.robot_path_plot.set_data(self.past_positions_x, self.past_positions_y)
-        self.robot_position_plot.set_data(self.currentx, self.currenty)  # Update the current position plot
+        self.robot_position_plot.set_data([self.currentx], [self.currenty])  # Update the current position plot
+
     def update_waypoints_plot(self):
         self.waypoints_x, self.waypoints_y = zip(*self.waypoints)
         self.waypoints_plot.set_data(self.waypoints_x, self.waypoints_y)
