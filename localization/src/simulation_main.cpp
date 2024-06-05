@@ -111,7 +111,7 @@ void gpsCallback(const sensor_msgs::NavSatFix::ConstPtr& msg)
 void imuCallback(const sensor_msgs::Imu::ConstPtr& msg)
 {
    Quaternion q(msg->orientation.w, msg->orientation.x, msg->orientation.y, msg->orientation.z);
-    yaw = q.get_yaw() + 90.0;
+    yaw = q.get_yaw() + 1.57;
 }
 
 int main(int argc, char **argv) 
