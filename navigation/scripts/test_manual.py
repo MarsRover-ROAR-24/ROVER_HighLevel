@@ -24,7 +24,7 @@ class Control:
         self.velocityrm_publisher = rospy.Publisher('/wheel_rhs_mid_velocity_controller/command', Float64, queue_size=10)
         self.pose_subscriber = rospy.Subscriber('/gazebo/model_states', ModelStates, self.update_pose)
 
-        self.path_subscriber = rospy.Subscriber('tuple_list_topic', wp_list, self.tuple_list_callback)  
+        # self.path_subscriber = rospy.Subscriber('tuple_list_topic', wp_list, self.tuple_list_callback)  
 
         self.pose = ModelStates()
         self.throttle_output=Float64()
@@ -33,7 +33,7 @@ class Control:
         self.kp = 0.5
         self.ki = 0.5
         self.kd = 0.0
-        self.dist_ld = 0.3
+        self.dist_ld = 1.5
 
         self.dt = 0.1
         self.currentx = 0.0
@@ -46,7 +46,26 @@ class Control:
         self.time_values = []
         self.error_values = []
 
-        self.waypoints = []
+        # self.waypoints = []
+        self.waypoints =  [(0,1)]
+        # (0, 0),
+        # (0.5, 0.2), 
+        # (1, 0.5),
+        # (1.5, 1), 
+        # (2, 2), 
+        # (2,4),(3.5, 4),(4,4),
+        # # (3, 2.5),
+        # # (4, 3.5), 
+        # (4.5, 4), 
+        # (5, 4.5),   # Curve start
+        # (6, 5.5),   # Curve end
+        # (6,6), 
+        # (7, 6.5),   # Curve start
+        # (8, 7.5),   # Curve end
+        # (9, 8.5),
+        # (9.5, 9)
+        # ]
+
         # self.x_goal_point = 0.0
         # self.y_goal_point = 0.0
         self.waypoints_plot = None
@@ -57,8 +76,8 @@ class Control:
         self.ax1.set_xlabel('X')
         self.ax1.set_ylabel('Y')
         self.ax1.set_title('Waypoints and Robot Path')
-        self.ax1.set_xlim(-10, 1)  # Set x-axis limits from -10 to 1
-        self.ax1.set_ylim(-2.5, 2.5)  # Set y-axis limits from -2.5 to 2.5
+        self.ax1.set_xlim(-1, 10)  # Set x-axis limits from -10 to 10
+        self.ax1.set_ylim(-2, 10.5)  # Set y-axis limits from -10 to 10
         self.waypoints_x = []
         self.waypoints_y = []
         self.waypoints_plot, = self.ax1.plot([], [], 'b--', label='Waypoints')
@@ -70,13 +89,15 @@ class Control:
         self.ax1.legend()
 
         plt.tight_layout()
-
-    def tuple_list_callback(self, msg):
-        self.waypoints = [(msg.a[i], msg.b[i]) for i in range(msg.length)]
-        self.x_goal_point = msg.a[0]
-        self.y_goal_point = msg.b[0]
-        self.waypoints.reverse()
+    
         self.update_waypoints_plot()
+
+    # def tuple_list_callback(self, msg):
+    #     self.waypoints = [(msg.a[i], msg.b[i]) for i in range(msg.length)]
+    #     self.x_goal_point = msg.a[0]
+    #     self.y_goal_point = msg.b[0]
+    #     self.waypoints.reverse()
+    #     self.update_waypoints_plot()
 
     def update_pose(self, data:ModelStates):
         self.pose = data
@@ -92,12 +113,11 @@ class Control:
         velocity = min(max(velocity, -1.57), 1.57)
         
         if velocity < 0:
-            # Mapping negative values from -1.57 to 0 to the range 0 to 55
-            return int(((velocity + 1.57) / 1.57) * 55)
+            # Mapping negative values from -1.57 to 0 to the range 0 to 61
+            return int(((velocity + 1.57) / 1.57) * 61)
         else:
-            # Mapping positive values from 0 to 1.57 to the range 75 to 127
-            return int((velocity / 1.57) * 52 + 75)
-
+            # Mapping positive values from 0 to 1.57 to the range 67 to 127
+            return int((velocity / 1.57) * 60 + 67)
 
     def pidController(self):
         e= 0.0
@@ -109,7 +129,7 @@ class Control:
             e = math.hypot(lookahead_point[0] - self.currentx, lookahead_point[1] - self.currenty)
             print("Selected Lookahead Point:", lookahead_point)
             e_past = 0
-            if e > 0.1:
+            if e > 0.01:
                 self.integral += e * self.dt
                 derivative = (e - e_past) / self.dt
                 action = self.kp * e + self.ki * self.integral + self.kd * derivative
@@ -151,10 +171,7 @@ class Control:
 
         if not candidate_lookahead_points:
                 return None  # No valid lookahead point found
-
-        # Calculate distances from candidate lookahead points to the goal
-        # distances_to_goal = [np.linalg.norm(np.array(waypoint) - np.array((self.x_goal_point, self.y_goal_point))) for waypoint in candidate_lookahead_points]
-
+        
         # Find the index of the candidate with the maximum distance to the goal
         max_distance_index = np.argmax(distance_to_robot)
 
