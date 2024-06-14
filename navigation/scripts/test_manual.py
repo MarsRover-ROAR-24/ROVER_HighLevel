@@ -48,6 +48,8 @@ class Control:
         self.time_values = []
         self.error_values = []
 
+        self.published_velocity = Int8MultiArray()
+
         # self.waypoints = []
         self.waypoints =  [(0,1)]
         # (0, 0),
@@ -209,6 +211,7 @@ class Control:
             self.velocityrr_publisher.publish(Vr)
 
             self.published_velocity.data = [Vl_mapped, Vr_mapped, Vl_mapped, Vr_mapped, Vl_mapped, Vr_mapped]
+            print ("Mapped Velocities: ", self.published_velocity.data)
             self.velocity_publisher.publish(self.published_velocity)
 
             # Plot rover position
