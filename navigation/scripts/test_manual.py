@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import math
 import rospy
-from std_msgs.msg import String, Float64
+from std_msgs.msg import String, Float64,Float64MultiArray, Int8MultiArray
 from geometry_msgs.msg import Twist, Pose
 from nav_msgs.msg import Odometry
 from gazebo_msgs.msg import ModelStates, LinkStates
@@ -16,6 +16,8 @@ class Control:
     def __init__(self):
 
         rospy.init_node('controller', anonymous=True)
+        self.velocity_publisher = rospy.Publisher('/nav_action/supervised', Int8MultiArray, queue_size=10)
+        
         self.velocitylf_publisher = rospy.Publisher('/wheel_lhs_front_velocity_controller/command', Float64, queue_size=10)
         self.velocityrf_publisher = rospy.Publisher('/wheel_rhs_front_velocity_controller/command', Float64, queue_size=10)
         self.velocitylr_publisher = rospy.Publisher('/wheel_lhs_rear_velocity_controller/command', Float64, queue_size=10)
@@ -205,7 +207,10 @@ class Control:
             self.velocityrf_publisher.publish(Vr)
             self.velocitylr_publisher.publish(Vl)
             self.velocityrr_publisher.publish(Vr)
-            
+
+            self.published_velocity.data = [Vl_mapped, Vr_mapped, Vl_mapped, Vr_mapped, Vl_mapped, Vr_mapped]
+            self.velocity_publisher.publish(self.published_velocity)
+
             # Plot rover position
             self.plot_rover_position()
             # Give time for plot to update
