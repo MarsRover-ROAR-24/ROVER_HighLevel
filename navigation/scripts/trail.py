@@ -9,7 +9,7 @@ from tf.transformations import euler_from_quaternion
 import time
 import numpy as np
 import matplotlib.pyplot as plt
-from turtlebot3_msgs.msg import wp_list
+# from turtlebot3_msgs.msg import wp_list
 
 class Control:
 
@@ -27,7 +27,7 @@ class Control:
 
         # self.path_subscriber = rospy.Subscriber('tuple_list_topic', wp_list, self.tuple_list_callback)  #===>
 
-        self.waypoints=waypoints = [
+        self.waypoints= [
                 (0, 0),
                 (0.1, 0.05),
                 (0.2, 0.1),
@@ -211,7 +211,7 @@ class Control:
         self.kp = 0.5
         self.ki = 0.5
         self.kd = 0.0
-        self.dist_ld = 1.0
+        self.dist_ld = 0.5
 
         self.dt = 0.1
         self.currentx = 0.0
@@ -224,7 +224,7 @@ class Control:
         self.time_values = []
         self.error_values = []
 
-        self.waypoints = []
+        # self.waypoints = []
         # self.x_goal_point = 0.0
         # self.y_goal_point = 0.0
         self.waypoints_plot = None
@@ -238,8 +238,8 @@ class Control:
         self.ax1.set_xlabel('X')
         self.ax1.set_ylabel('Y')
         self.ax1.set_title('Waypoints')
-        self.ax1.set_xlim(-10, 1)  # Set x-axis limits from -10 to 10
-        self.ax1.set_ylim(-2.5, 2.5)  # Set y-axis limits from -10 to 10
+        self.ax1.set_xlim(-1, 11)  # Set x-axis limits from -10 to 10
+        self.ax1.set_ylim(-1, 11)  # Set y-axis limits from -10 to 10
         self.waypoints_x = []
         self.waypoints_y = []
         self.waypoints_plot, = self.ax1.plot([], [], 'b--', label='Waypoints')
@@ -258,12 +258,12 @@ class Control:
 
         plt.tight_layout()
 
-    def tuple_list_callback(self, msg):
-        self.waypoints = [(msg.a[i], msg.b[i]) for i in range(msg.length)]
-        self.x_goal_point = msg.a[0]
-        self.y_goal_point = msg.b[0]
-        self.waypoints.reverse()
-        self.update_waypoints_plot()
+    # def tuple_list_callback(self, msg):
+    #     self.waypoints = [(msg.a[i], msg.b[i]) for i in range(msg.length)]
+    #     self.x_goal_point = msg.a[0]
+    #     self.y_goal_point = msg.b[0]
+    #     self.waypoints.reverse()
+    #     self.update_waypoints_plot()
 
     def update_pose(self, data:Float64MultiArray):
         self.pose = data
@@ -321,7 +321,7 @@ class Control:
     def find_lookahead_point(self, robot_position):
         candidate_lookahead_points = []
         max_index = -1
-
+        # print('waypoints:', self.waypoints)
         for i, waypoint in enumerate(self.waypoints):
                 distance_to_robot = np.linalg.norm(np.array(waypoint) - np.array(robot_position))
 
@@ -345,7 +345,9 @@ class Control:
 
     def purePursuit(self):
         lookahead_point = self.find_lookahead_point((self.currentx, self.currenty))
+        # print('Lookahead Point:', lookahead_point)
 
+        # print('waypoints:', self.waypoints)
         if lookahead_point is not None:
             alpha = math.atan2((lookahead_point[1] - self.currenty), (lookahead_point[0] - self.currentx))
             L = math.hypot(lookahead_point[0] - self.currentx, lookahead_point[1] - self.currenty)
@@ -400,7 +402,7 @@ if __name__ == '__main__':
     try:
         x = Control()
         while not rospy.is_shutdown():
-            if len(x.waypoints) > 0:
+            # if len(x.waypoints) > 0:
                 x.purePursuit()
     except rospy.ROSInterruptException:
         pass

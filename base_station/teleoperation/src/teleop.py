@@ -39,12 +39,12 @@ class ControlApp(Tk, object):
                                     self.back, self.back, self.back]
             self.nav_pub.publish(self.speeds_msg)
         elif event.keysym == "Left":
-            self.speeds_msg.data = [self.forw, self.back, self.forw,
-                                    self.back, self.forw, self.back]
+            self.speeds_msg.data = [self.forw, self.back, self.back,
+                                    self.forw, self.forw, self.back]
             self.nav_pub.publish(self.speeds_msg)
         elif event.keysym == "Right":
-            self.speeds_msg.data = [self.back, self.forw, self.back,
-                                    self.forw, self.back, self.forw]
+            self.speeds_msg.data = [self.back, self.forw, self.forw,
+                                    self.back, self.back, self.forw]
             self.nav_pub.publish(self.speeds_msg)
 
     def keyup(self, event: Event) -> None:
@@ -61,4 +61,5 @@ if __name__ == "__main__":
         system('xset r on')
     except rospy.ROSInterruptException:
         system('xset r on')
+        
         

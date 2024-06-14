@@ -1,0 +1,5 @@
+<?xml version="1.0"?>
+<launch>
+<node pkg="localization" type="UKF_Plotting.py" name="UKF_plotting" output="screen" />
+<node pkg="localization" type="simulation_main" name="ukf_localization" output="screen" />
+</launch>
