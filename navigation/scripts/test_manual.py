@@ -35,7 +35,7 @@ class Control:
         self.kp = 0.5
         self.ki = 0.5
         self.kd = 0.0
-        self.dist_ld = 0.7
+        self.dist_ld = 0.5
 
         self.dt = 0.1
         self.currentx = 0.0
@@ -90,7 +90,7 @@ class Control:
                         (4.5, 2.1),
                         (4.625, 1.9),
                         (4.75, 1.7),
-                        (4.875, 1.275),
+                        (4.875, 1.275),(4.9,1.175),(4.95,1),(5,0.75),(5,0.6),(5,0.5),(5,0.25),
                         (5, 0)
                         ]
 
@@ -105,8 +105,8 @@ class Control:
         self.ax1.set_xlabel('X')
         self.ax1.set_ylabel('Y')
         self.ax1.set_title('Waypoints and Robot Path')
-        self.ax1.set_xlim(-1, 5)  # Set x-axis limits from -10 to 10
-        self.ax1.set_ylim(-2, 7)  # Set y-axis limits from -10 to 10
+        self.ax1.set_xlim(-1, 7)  # Set x-axis limits from -10 to 10
+        self.ax1.set_ylim(-2, 5)  # Set y-axis limits from -10 to 10
         self.waypoints_x = []
         self.waypoints_y = []
         self.waypoints_plot, = self.ax1.plot([], [], 'b--', label='Waypoints')
