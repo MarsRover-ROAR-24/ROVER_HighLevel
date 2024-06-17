@@ -9,7 +9,6 @@ from tf.transformations import euler_from_quaternion
 import time
 import numpy as np
 import matplotlib.pyplot as plt
-from turtlebot3_msgs.msg import wp_list
 
 class Control:
 
@@ -35,7 +34,7 @@ class Control:
         self.kp = 0.5
         self.ki = 0.5
         self.kd = 0.0
-        self.dist_ld = 1.5
+        self.dist_ld = 0.75
 
         self.dt = 0.1
         self.currentx = 0.0
@@ -51,7 +50,7 @@ class Control:
         self.published_velocity = Int8MultiArray()
 
         # self.waypoints = []
-        self.waypoints =  [(0,1)]
+        self.waypoints =  [(0,0.5),(0,1),(0.5,1.5),(1,2)]
         # (0, 0),
         # (0.5, 0.2), 
         # (1, 0.5),
@@ -121,7 +120,7 @@ class Control:
             return int(((velocity + 1.57) / 1.57) * 61)
         else:
             # Mapping positive values from 0 to 1.57 to the range 67 to 127
-            return int((velocity / 1.57) * 60 + 67)
+            return int((velocity / 1.57) * 61 + 66)
 
     def pidController(self):
         e= 0.0
