@@ -53,7 +53,6 @@ class Control:
 
         self.published_velocity = Int8MultiArray()
 
-<<<<<<< HEAD
         # self.waypoints = []
         self.waypoints =  [(0,0.5),(0,1),(0.5,1.5),(1,2)]
         # (0, 0),
@@ -74,7 +73,6 @@ class Control:
         # (9.5, 9)
         # ]
 
-=======
         self.waypoints = [
                         (0, 0),
                         (0.125, 0.425),
@@ -120,7 +118,6 @@ class Control:
                         ]
 
         # self.waypoints =  [(0,1)]
->>>>>>> fe986a231483ce935a9deb0f1831ea200a2d15b0
         # self.x_goal_point = 0.0
         # self.y_goal_point = 0.0
         self.waypoints_plot = None
