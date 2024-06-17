@@ -34,7 +34,11 @@ class Control:
         self.kp = 0.5
         self.ki = 0.5
         self.kd = 0.0
+<<<<<<< HEAD
         self.dist_ld = 0.75
+=======
+        self.dist_ld = 0.5
+>>>>>>> fe986a231483ce935a9deb0f1831ea200a2d15b0
 
         self.dt = 0.1
         self.currentx = 0.0
@@ -49,6 +53,7 @@ class Control:
 
         self.published_velocity = Int8MultiArray()
 
+<<<<<<< HEAD
         # self.waypoints = []
         self.waypoints =  [(0,0.5),(0,1),(0.5,1.5),(1,2)]
         # (0, 0),
@@ -69,6 +74,53 @@ class Control:
         # (9.5, 9)
         # ]
 
+=======
+        self.waypoints = [
+                        (0, 0),
+                        (0.125, 0.425),
+                        (0.25, 0.85),
+                        (0.375, 1.275),
+                        (0.5, 1.7),
+                        (0.625, 1.85),
+                        (0.75, 2),
+                        (0.875, 2.15),
+                        (1, 2.3),
+                        (1.125, 2.35),
+                        (1.25, 2.4),
+                        (1.375, 2.45),
+                        (1.5, 2.5),
+                        (1.625, 2.55),
+                        (1.75, 2.6),
+                        (1.875, 2.65),
+                        (2, 2.7),
+                        (2.125, 2.7),
+                        (2.25, 2.7),
+                        (2.375, 2.7),
+                        (2.5, 2.7),
+                        (2.625, 2.7),
+                        (2.75, 2.7),
+                        (2.875, 2.7),
+                        (3, 2.7),
+                        (3.125, 2.65),
+                        (3.25, 2.6),
+                        (3.375, 2.55),
+                        (3.5, 2.5),
+                        (3.625, 2.45),
+                        (3.75, 2.4),
+                        (3.875, 2.35),
+                        (4, 2.3),
+                        (4.125, 2.25),
+                        (4.25, 2.2),
+                        (4.375, 2.15),
+                        (4.5, 2.1),
+                        (4.625, 1.9),
+                        (4.75, 1.7),
+                        (4.875, 1.275),(4.9,1.175),(4.95,1),(5,0.75),(5,0.6),(5,0.5),(5,0.25),
+                        (5, 0)
+                        ]
+
+        # self.waypoints =  [(0,1)]
+>>>>>>> fe986a231483ce935a9deb0f1831ea200a2d15b0
         # self.x_goal_point = 0.0
         # self.y_goal_point = 0.0
         self.waypoints_plot = None
@@ -79,8 +131,8 @@ class Control:
         self.ax1.set_xlabel('X')
         self.ax1.set_ylabel('Y')
         self.ax1.set_title('Waypoints and Robot Path')
-        self.ax1.set_xlim(-1, 10)  # Set x-axis limits from -10 to 10
-        self.ax1.set_ylim(-2, 10.5)  # Set y-axis limits from -10 to 10
+        self.ax1.set_xlim(-1, 7)  # Set x-axis limits from -10 to 10
+        self.ax1.set_ylim(-2, 5)  # Set y-axis limits from -10 to 10
         self.waypoints_x = []
         self.waypoints_y = []
         self.waypoints_plot, = self.ax1.plot([], [], 'b--', label='Waypoints')
