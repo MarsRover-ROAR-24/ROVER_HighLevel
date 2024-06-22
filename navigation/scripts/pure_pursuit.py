@@ -33,7 +33,7 @@ class Control:
         self.kp = 0.5
         self.ki = 0.5
         self.kd = 0.0
-        self.dist_ld = 1
+        self.dist_ld = 0.3
 
         self.dt = 0.1
         self.currentx = 0.0
@@ -92,11 +92,11 @@ class Control:
         velocity = min(max(velocity, -1.57), 1.57)
         
         if velocity < 0:
-            # Mapping negative values from -1.57 to 0 to the range 0 to 55
-            return int(((velocity + 1.57) / 1.57) * 55)
+            # Mapping negative values from -1.57 to 0 to the range 0 to 61
+            return int(((velocity + 1.57) / 1.57) * 61)
         else:
-            # Mapping positive values from 0 to 1.57 to the range 75 to 127
-            return int((velocity / 1.57) * 52 + 75)
+            # Mapping positive values from 0 to 1.57 to the range 67 to 127
+            return int((velocity / 1.57) * 60 + 67)
 
 
     def pidController(self):
@@ -109,7 +109,7 @@ class Control:
             e = math.hypot(lookahead_point[0] - self.currentx, lookahead_point[1] - self.currenty)
             print("Selected Lookahead Point:", lookahead_point)
             e_past = 0
-            if e > 0.1:
+            if e > 0.05:
                 self.integral += e * self.dt
                 derivative = (e - e_past) / self.dt
                 action = self.kp * e + self.ki * self.integral + self.kd * derivative
@@ -200,9 +200,18 @@ class Control:
         self.robot_path_plot.set_data(self.past_positions_x, self.past_positions_y)
         self.robot_position_plot.set_data([self.currentx], [self.currenty])  # Update the current position plot
 
+    # def update_waypoints_plot(self):
+    #     self.waypoints_x, self.waypoints_y = zip(*self.waypoints)
+    #     self.waypoints_plot.set_data(self.waypoints_x, self.waypoints_y)
+
     def update_waypoints_plot(self):
-        self.waypoints_x, self.waypoints_y = zip(*self.waypoints)
-        self.waypoints_plot.set_data(self.waypoints_x, self.waypoints_y)
+            if self.waypoints:
+                self.waypoints_x, self.waypoints_y = zip(*self.waypoints)
+            else:
+                self.waypoints_x, self.waypoints_y = [], []
+
+            if self.waypoints_plot is not None:
+                self.waypoints_plot.set_data(self.waypoints_x, self.waypoints_y)
 
 if __name__ == '__main__':
     try:

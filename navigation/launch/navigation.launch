@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<launch>
+<node pkg="navigation" type="global_path.py" name="global_path_publisher_node" output="screen" />
+<node pkg="navigation" type="local_path.py" name="local_path_publisher_node" output="screen" />
+<node pkg="navigation" type="path_selector.py" name="path_selector_node" output="screen" />
+</launch>

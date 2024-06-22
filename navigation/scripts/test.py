@@ -34,13 +34,13 @@ class Control:
         self.kp = 0.5
         self.ki = 0.5
         self.kd = 0.0
-        self.dist_ld = 0.3
+        self.dist_ld = 1
 
         self.dt = 0.1
         self.currentx = 0.0
         self.currenty = 0.0
         self.integral = 0.0
-        self.max_velocity = 1.57
+        self.max_velocity = 2
 
         self.robot_theta = 0.0
         self.width = 0.8
@@ -61,8 +61,8 @@ class Control:
         self.ax1.set_xlabel('X')
         self.ax1.set_ylabel('Y')
         self.ax1.set_title('Waypoints')
-        self.ax1.set_xlim(0, 10)  # Set x-axis limits from -10 to 10
-        self.ax1.set_ylim(-1, 10)  # Set y-axis limits from -10 to 10
+        self.ax1.set_xlim(-0.5, 11)  # Set x-axis limits from -10 to 10
+        self.ax1.set_ylim(-0.5, 11)  # Set y-axis limits from -10 to 10
         self.waypoints_x = []
         self.waypoints_y = []
         self.waypoints_plot, = self.ax1.plot([], [], 'b--', label='Waypoints')
@@ -175,8 +175,8 @@ class Control:
             Vr = self.pidController() * (1 - self.width * dx / (L * L))
             Vl = self.pidController() * (1 + self.width * dx / (L * L))
 
-            Vr = min(max(Vr, -1.57), 1.57)
-            Vl = min(max(Vl, -1.57), 1.57)
+            Vr = min(max(Vr, -2), 2)
+            Vl = min(max(Vl, -2), 2)
 
             Vr_mapped = int(((Vr + 1.57) / (1.57 * 2)) * 127 + 0.5) 
             Vl_mapped = int(((Vl + 1.57) / (1.57 * 2)) * 127 + 0.5)
