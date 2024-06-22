@@ -9,7 +9,6 @@ from tf.transformations import euler_from_quaternion
 import time
 import numpy as np
 import matplotlib.pyplot as plt
-from turtlebot3_msgs.msg import wp_list
 
 class Control:
 
@@ -49,7 +48,7 @@ class Control:
         self.error_values = []
 
         self.published_velocity = Int8MultiArray()
-
+        
         self.waypoints = [ 
             #  (0, 0),(0.5, 0.2), (1, 0.5),(1.5, 1), (2, 2), (2,4),(3.5, 4),(4,4),(4.5, 4), (5, 4.5),(6,6), (7, 6.5), (8, 7.5),(9, 8.5),(9.5, 9)]
                 (0, 0),
@@ -288,6 +287,70 @@ class Control:
                         # (5, 0)
                         # ]
 
+        # self.waypoints = []
+        self.waypoints =  [(0,0.5),(0,1),(0.5,1.5),(1,2)]
+        # (0, 0),
+        # (0.5, 0.2), 
+        # (1, 0.5),
+        # (1.5, 1), 
+        # (2, 2), 
+        # (2,4),(3.5, 4),(4,4),
+        # # (3, 2.5),
+        # # (4, 3.5), 
+        # (4.5, 4), 
+        # (5, 4.5),   # Curve start
+        # (6, 5.5),   # Curve end
+        # (6,6), 
+        # (7, 6.5),   # Curve start
+        # (8, 7.5),   # Curve end
+        # (9, 8.5),
+        # (9.5, 9)
+        # ]
+
+        self.waypoints = [
+                        (0, 0),
+                        (0.125, 0.425),
+                        (0.25, 0.85),
+                        (0.375, 1.275),
+                        (0.5, 1.7),
+                        (0.625, 1.85),
+                        (0.75, 2),
+                        (0.875, 2.15),
+                        (1, 2.3),
+                        (1.125, 2.35),
+                        (1.25, 2.4),
+                        (1.375, 2.45),
+                        (1.5, 2.5),
+                        (1.625, 2.55),
+                        (1.75, 2.6),
+                        (1.875, 2.65),
+                        (2, 2.7),
+                        (2.125, 2.7),
+                        (2.25, 2.7),
+                        (2.375, 2.7),
+                        (2.5, 2.7),
+                        (2.625, 2.7),
+                        (2.75, 2.7),
+                        (2.875, 2.7),
+                        (3, 2.7),
+                        (3.125, 2.65),
+                        (3.25, 2.6),
+                        (3.375, 2.55),
+                        (3.5, 2.5),
+                        (3.625, 2.45),
+                        (3.75, 2.4),
+                        (3.875, 2.35),
+                        (4, 2.3),
+                        (4.125, 2.25),
+                        (4.25, 2.2),
+                        (4.375, 2.15),
+                        (4.5, 2.1),
+                        (4.625, 1.9),
+                        (4.75, 1.7),
+                        (4.875, 1.275),(4.9,1.175),(4.95,1),(5,0.75),(5,0.6),(5,0.5),(5,0.25),
+                        (5, 0)
+                        ]
+
         # self.waypoints =  [(0,1)]
         # self.x_goal_point = 0.0
         # self.y_goal_point = 0.0
@@ -340,7 +403,7 @@ class Control:
             return int(((velocity + 1.57) / 1.57) * 61)
         else:
             # Mapping positive values from 0 to 1.57 to the range 67 to 127
-            return int((velocity / 1.57) * 60 + 67)
+            return int((velocity / 1.57) * 61 + 66)
 
     def pidController(self):
         e= 0.0
