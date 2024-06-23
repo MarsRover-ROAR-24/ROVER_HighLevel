@@ -17,8 +17,7 @@ class PathSelector:
 
         # Define publisher
         self.selected_path_pub = rospy.Publisher('/selected_path', Path, queue_size=10)
-        self.visualization_pub = rospy.Publisher('/visualization_marker', Marker, queue_size=10)
-
+        
         # Initialize path variables
         self.global_path = None
         self.local_path = None
@@ -46,23 +45,6 @@ class PathSelector:
             rospy.loginfo("Publishing global path")
             self.selected_path_pub.publish(self.global_path)
 
-    def visualize_path(self, path, path_type):
-        marker = Marker()
-        marker.header.frame_id = path.header.frame_id
-        marker.header.stamp = rospy.Time.now()
-        marker.ns = path_type
-        marker.id = 0
-        marker.type = Marker.LINE_STRIP
-        marker.action = Marker.ADD
-        marker.scale.x = 0.1
-        marker.color.a = 1.0
-        marker.color.r = 1.0 if path_type == "global_path" else 0.0
-        marker.color.g = 0.0 if path_type == "global_path" else 1.0
-        marker.color.b = 0.0
-
-        marker.points = [point.pose.position for point in path.poses]
-
-        self.visualization_pub.publish(marker)
 
     def run(self):
         while not rospy.is_shutdown():
