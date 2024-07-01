@@ -1,0 +1,36 @@
+global_costmap:
+
+  global_frame: map
+  robot_base_frame: base_link #base_footprint
+  update_frequency: 0.2
+  publish_frequency: 0.2
+  static_map: True
+  rolling_window: False
+  resolution: 0.05
+  inflation_radius: 0.2 #-->1.5
+  cost_scaling_factor: 2.0
+
+
+  transform_tolerance: 0.5
+  plugins:
+    - {name: static_layer,            type: "costmap_2d::StaticLayer"}
+    - {name: obstacle_layer,          type: "costmap_2d::ObstacleLayer"}
+    - {name: inflation_layer,         type: "costmap_2d::InflationLayer"}
+
+####################################################################################
+
+# global_costmap:
+#    global_frame: map
+#    robot_base_frame: base_link #base_footprint 
+#    update_frequency: 0.2 #1.0
+#    publish_frequency: 0.2
+#    transform_tolerance: 0.5
+
+# # uncomment to remove the need for an a priori map
+# #   plugins: []
+
+#    plugins:
+#      - {name: static_layer,            type: "costmap_2d::StaticLayer"}
+#      - {name: inflation_layer,         type: "costmap_2d::InflationLayer"}
+
+
