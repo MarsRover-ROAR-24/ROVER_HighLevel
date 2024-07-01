@@ -1,0 +1,7 @@
+<launch>
+
+    <node pkg="global_path_planning" name="global_path_publisher" type="trialpub.py"/>
+    <node pkg="global_path_planning" name="frame_transformation" type="TF_updated.py"/>
+    <node pkg="global_path_planning" name="controller_node" type="pure_pursuit.py"/>
+
+</launch>

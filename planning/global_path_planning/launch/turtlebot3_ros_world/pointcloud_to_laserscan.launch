@@ -1,0 +1,23 @@
+<launch>
+  <!-- Convert point cloud to laser scan -->
+  <node pkg="pointcloud_to_laserscan" type="pointcloud_to_laserscan_node" name="pointcloud_to_laserscan">
+
+
+    <remap from="cloud_in" to="/camera/depth/points"/> <!-- Input point cloud topic -->
+    <remap from="scan" to="/scan"/> <!-- Output laser scan topic -->
+
+    <param name="target_frame" value="kinect_body"/> 
+    <param name="min_height" value="0.0"/>
+    <param name="max_height" value="3.0"/>
+    <param name="angle_min" value="-1.57"/> <!-- -90 degrees -->
+    <param name="angle_max" value="1.57"/> <!-- 90 degrees -->
+    <param name="angle_increment" value="0.01"/> <!-- Adjust based on your needs -->
+    <param name="scan_time" value="0.1"/>
+    <param name="range_min" value="0.1"/>
+    <param name="range_max" value="10.0"/>
+    <param name="concurrency_level" value="1"/>
+    <param name="use_inf" value="true"/>
+
+  </node>
+
+</launch>
