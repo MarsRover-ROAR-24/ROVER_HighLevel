@@ -1,0 +1,8 @@
+image: APF_Rviz.pgm
+resolution: 0.0063  # Resolution of each pixel in meters
+origin: [-0.5, -0.5, 0.0]  # Origin of the map in world coordinates
+negate: 0  # Whether to negate the colors in the image (0 = no, 1 = yes)
+occupied_thresh: 0.65  # Threshold above which pixels are considered occupied
+free_thresh: 0.196  # Threshold below which pixels are considered free
+
+
