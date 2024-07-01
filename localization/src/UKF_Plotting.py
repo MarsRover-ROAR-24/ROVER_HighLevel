@@ -72,26 +72,15 @@ def match_data():
 def plot_data():
     plt.figure(figsize=(10, 8))
 
-    # Plotting the filtered states
-    plt.subplot(2, 1, 1)
+    # Plotting both filtered and ground truth states in the same plot
     plt.plot(matched_var1_source1, matched_var2_source1, label='Filtered State', color='blue')
-    plt.xlabel('X position')
-    plt.ylabel('Y position')
-    plt.title('Filtered State Position')
-    plt.xlim(-2, 2)
-    plt.ylim(-2, 2)
-    plt.legend()
-
-    # Plotting the ground truth states
-    plt.subplot(2, 1, 2)
     plt.plot(matched_var1_source2, matched_var2_source2, label='Ground Truth State', color='red')
     plt.xlabel('X position')
     plt.ylabel('Y position')
-    plt.title('Ground Truth State Position')
-    plt.xlim(-2, 2)
-    plt.ylim(-2, 2)
+    plt.title('State Position')
+    plt.xlim(-1, 6)
+    plt.ylim(-1, 4)
     plt.legend()
-
     plt.tight_layout()
 
 # Main function

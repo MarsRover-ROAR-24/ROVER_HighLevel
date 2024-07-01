@@ -5,7 +5,7 @@
         pkg="rosserial_python"
         type="serial_node.py"
         name="ArduinoOne"
-        args="/dev/ttyACM1 _baud:=115200"
+        args="/dev/ttyACM0 _baud:=115200"
         output = "screen"
 
     ></node>
